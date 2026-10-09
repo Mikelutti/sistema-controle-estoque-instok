@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sistema de Controle de Estoque{% endblock %}</title>
+
+    <!-- CSS global carregado em todas as paginas -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}">
+
+    <!-- Bloco para CSS especifico de cada pagina, se necessario -->
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+    <!-- TODO: cabecalho/menu de navegacao do sistema -->
+    <header>
+        <!-- futuramente: logo, nome do sistema e menu -->
+    </header>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- TODO: rodape do sistema -->
+    <footer>
+        <!-- futuramente: informacoes de rodape -->
+    </footer>
+
+    <!-- JavaScript geral da aplicacao -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+
+    <!-- Bloco para JS especifico de cada pagina, se necessario -->
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
