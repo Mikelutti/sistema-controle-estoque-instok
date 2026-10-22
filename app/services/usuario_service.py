@@ -1,60 +1,141 @@
 """
 app/services/usuario_service.py
 
-Responsabilidade: regras de negocio relacionadas ao cadastro e
-gerenciamento de usuarios.
-
-Funcoes previstas (a implementar futuramente):
-- validar_cadastro: validar os dados de um novo usuario antes de
-  criar o registro.
-- validar_campos_obrigatorios: garantir que os campos obrigatorios
-  foram informados.
-- validar_usuario_duplicado: impedir cadastro de usuarios duplicados
-  (ex: mesmo login/e-mail).
-- gerar_hash_senha: gerar o hash da senha antes de persistir.
-- controlar_nivel_acesso: aplicar regras relacionadas ao nivel de
-  acesso do usuario.
-- inativar_usuario: aplicar a regra de negocio de inativacao
-  (exclusao logica).
-- impedir_exclusao_com_historico: impedir exclusao fisica de um
-  usuario que possua historico de movimentacoes associado.
-
-Nesta etapa do projeto, apenas a estrutura esta preparada (sem logica
-implementada), conforme solicitado.
+Responsabilidade:
+- Aplicar as regras de negocio relacionadas aos usuarios.
+- Validar dados antes de envia-los ao repository.
+- Gerar hash seguro das senhas.
+- Impedir usuarios duplicados.
+- Controlar os niveis de acesso permitidos.
 """
 
+from werkzeug.security import generate_password_hash
 
-# TODO: implementar validacao geral de cadastro de usuario
-def validar_cadastro(*args, **kwargs):
-    pass
-
-
-# TODO: implementar validacao dos campos obrigatorios
-def validar_campos_obrigatorios(*args, **kwargs):
-    pass
-
-
-# TODO: implementar validacao para impedir usuarios duplicados
-def validar_usuario_duplicado(*args, **kwargs):
-    pass
+from app.repositories.usuario_repository import (
+    buscar_usuario_por_email,
+    buscar_usuario_por_login,
+    inserir_usuario,
+    inativar_usuario as repository_inativar_usuario,
+)
 
 
-# TODO: implementar geracao de hash de senha
+NIVEIS_ACESSO_PERMITIDOS = (
+    "ADMINISTRADOR",
+    "OPERADOR",
+)
+
+
+def validar_campos_obrigatorios(
+    nome,
+    usuario,
+    email,
+    senha,
+    nivel_acesso,
+):
+    if not nome or not nome.strip():
+        raise ValueError("O nome e obrigatorio.")
+
+    if not usuario or not usuario.strip():
+        raise ValueError("O usuario e obrigatorio.")
+
+    if not email or not email.strip():
+        raise ValueError("O e-mail e obrigatorio.")
+
+    if not senha:
+        raise ValueError("A senha e obrigatoria.")
+
+    if not nivel_acesso:
+        raise ValueError("O nivel de acesso e obrigatorio.")
+
+
+def validar_usuario_duplicado(usuario, email):
+    usuario_existente = buscar_usuario_por_login(usuario)
+
+    if usuario_existente:
+        raise ValueError("Ja existe um usuario com esse login.")
+
+    email_existente = buscar_usuario_por_email(email)
+
+    if email_existente:
+        raise ValueError("Ja existe um usuario com esse e-mail.")
+
+
+def controlar_nivel_acesso(nivel_acesso):
+    nivel_acesso = nivel_acesso.upper()
+
+    if nivel_acesso not in NIVEIS_ACESSO_PERMITIDOS:
+        raise ValueError(
+            "Nivel de acesso invalido. "
+            "Use ADMINISTRADOR ou OPERADOR."
+        )
+
+    return nivel_acesso
+
+
 def gerar_hash_senha(senha):
-    pass
+    return generate_password_hash(senha)
 
 
-# TODO: implementar controle de nivel de acesso do usuario
-def controlar_nivel_acesso(*args, **kwargs):
-    pass
+def validar_cadastro(
+    nome,
+    usuario,
+    email,
+    senha,
+    nivel_acesso,
+):
+    validar_campos_obrigatorios(
+        nome,
+        usuario,
+        email,
+        senha,
+        nivel_acesso,
+    )
+
+    nivel_acesso = controlar_nivel_acesso(nivel_acesso)
+
+    validar_usuario_duplicado(
+        usuario.strip(),
+        email.strip(),
+    )
+
+    return nivel_acesso
 
 
-# TODO: implementar inativacao de usuario (exclusao logica)
+def cadastrar_usuario(
+    nome,
+    usuario,
+    email,
+    senha,
+    nivel_acesso,
+):
+    nivel_acesso = validar_cadastro(
+        nome,
+        usuario,
+        email,
+        senha,
+        nivel_acesso,
+    )
+
+    senha_hash = gerar_hash_senha(senha)
+
+    usuario_id = inserir_usuario(
+        nome=nome.strip(),
+        usuario=usuario.strip(),
+        email=email.strip().lower(),
+        senha_hash=senha_hash,
+        nivel_acesso=nivel_acesso,
+    )
+
+    return usuario_id
+
+
 def inativar_usuario(usuario_id):
-    pass
+    if not usuario_id:
+        raise ValueError("ID do usuario invalido.")
 
+    linhas_alteradas = repository_inativar_usuario(usuario_id)
 
-# TODO: impedir exclusao fisica de usuario quando houver historico
-# de movimentacoes associado
-def impedir_exclusao_com_historico(usuario_id):
-    pass
+    if linhas_alteradas == 0:
+        raise ValueError("Usuario nao encontrado.")
+
+    return True

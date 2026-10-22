@@ -1,39 +1,63 @@
 """
 app/services/auth_service.py
 
-Responsabilidade: regras de negocio relacionadas a autenticacao.
+Responsabilidade:
+- Validar as credenciais de login.
+- Verificar se o usuario existe.
+- Verificar se o usuario esta ativo.
+- Comparar a senha informada com o hash armazenado no banco.
 
-Funcoes previstas (a implementar futuramente):
-- validar_login: verificar se as credenciais informadas correspondem
-  a um usuario existente.
-- validar_usuario_ativo: impedir login de usuarios inativos.
-- verificar_senha: comparar a senha informada com o hash armazenado
-  (nunca comparar senha em texto puro).
-- controlar regras adicionais relacionadas a autenticacao (ex: numero
-  de tentativas, expiracao de sessao) quando definidas futuramente.
-
-IMPORTANTE:
-Este service nunca deve armazenar ou comparar senha em texto puro.
-Sempre utilizar hash (ex: werkzeug.security ou biblioteca equivalente,
-a ser definida futuramente).
-
-Nesta etapa do projeto, apenas a estrutura esta preparada (sem logica
-implementada), conforme solicitado.
+Este service nunca armazena ou compara senhas em texto puro.
 """
 
+from werkzeug.security import check_password_hash
 
-# TODO: implementar validacao de login (usuario + senha)
-def validar_login(*args, **kwargs):
-    pass
-
-
-# TODO: implementar validacao de usuario ativo (impedir login de
-# usuarios inativos)
-def validar_usuario_ativo(*args, **kwargs):
-    pass
+from app.repositories.usuario_repository import buscar_usuario_por_login
 
 
-# TODO: implementar verificacao de senha via hash
-# (nunca comparar senha em texto puro)
-def verificar_senha(*args, **kwargs):
-    pass
+def validar_usuario_ativo(usuario):
+    """
+    Verifica se o usuario pode acessar o sistema.
+    """
+
+    if usuario["status"] != "ATIVO":
+        raise ValueError("Usuario inativo.")
+
+    return True
+
+
+def verificar_senha(usuario, senha):
+    """
+    Compara a senha informada com o hash armazenado.
+    """
+
+    return check_password_hash(
+        usuario["senha_hash"],
+        senha,
+    )
+
+
+def validar_login(login, senha):
+    """
+    Valida as credenciais informadas no login.
+
+    Retorna o usuario quando as credenciais forem validas.
+    """
+
+    if not login or not login.strip():
+        raise ValueError("Informe o usuario.")
+
+    if not senha:
+        raise ValueError("Informe a senha.")
+
+    usuario = buscar_usuario_por_login(login.strip())
+
+    if usuario is None:
+        raise ValueError("Usuario ou senha invalidos.")
+
+    validar_usuario_ativo(usuario)
+
+    if not verificar_senha(usuario, senha):
+        raise ValueError("Usuario ou senha invalidos.")
+
+    return usuario

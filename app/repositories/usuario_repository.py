@@ -2,58 +2,188 @@
 app/repositories/usuario_repository.py
 
 Responsabilidade:
-- Executar todo o SQL relacionado a entidade "usuarios" (tabela
-  "usuarios" definida em database/schema.sql).
-- Esta e a UNICA camada autorizada a montar/executar queries de usuarios.
-- Recebe conexoes de app/database/connection.py.
-- E consumida exclusivamente por app/services/usuario_service.py e
-  app/services/auth_service.py.
-
-Funcoes previstas (a implementar futuramente):
-- buscar_usuario_por_id: retornar um usuario a partir do seu ID.
-- buscar_usuario_por_login: retornar um usuario a partir do login.
-- buscar_usuario_por_email: retornar um usuario a partir do e-mail.
-- listar_usuarios: retornar todos os usuarios cadastrados (ativos).
-- inserir_usuario: criar um novo registro de usuario.
-- atualizar_usuario: atualizar dados de um usuario existente.
-- inativar_usuario: marcar um usuario como inativo (exclusao logica,
-  nunca exclusao fisica).
-
-Nesta etapa do projeto, apenas a estrutura esta preparada (sem logica
-implementada), conforme solicitado.
+- Executar o SQL relacionado a tabela usuarios.
+- Nao conter regras de negocio.
+- Utilizar a conexao definida em app/database/connection.py.
 """
 
+from app.database.connection import obter_conexao, fechar_conexao
 
-# TODO: buscar usuario por ID
+
 def buscar_usuario_por_id(usuario_id):
-    pass
+    conexao = obter_conexao()
+
+    try:
+        usuario = conexao.execute(
+            """
+            SELECT *
+            FROM usuarios
+            WHERE id = ?
+            """,
+            (usuario_id,),
+        ).fetchone()
+
+        return usuario
+
+    finally:
+        fechar_conexao(conexao)
 
 
-# TODO: buscar usuario por login
 def buscar_usuario_por_login(login):
-    pass
+    conexao = obter_conexao()
+
+    try:
+        usuario = conexao.execute(
+            """
+            SELECT *
+            FROM usuarios
+            WHERE usuario = ?
+            """,
+            (login,),
+        ).fetchone()
+
+        return usuario
+
+    finally:
+        fechar_conexao(conexao)
 
 
-# TODO: buscar usuario por e-mail
 def buscar_usuario_por_email(email):
-    pass
+    conexao = obter_conexao()
+
+    try:
+        usuario = conexao.execute(
+            """
+            SELECT *
+            FROM usuarios
+            WHERE email = ?
+            """,
+            (email,),
+        ).fetchone()
+
+        return usuario
+
+    finally:
+        fechar_conexao(conexao)
 
 
-# TODO: listar todos os usuarios cadastrados (considerar apenas ativos)
 def listar_usuarios():
-    pass
+    conexao = obter_conexao()
+
+    try:
+        usuarios = conexao.execute(
+            """
+            SELECT *
+            FROM usuarios
+            WHERE status = 'ATIVO'
+            ORDER BY nome
+            """
+        ).fetchall()
+
+        return usuarios
+
+    finally:
+        fechar_conexao(conexao)
 
 
-# TODO: inserir um novo usuario
-def inserir_usuario(*args, **kwargs):
-    pass
+def inserir_usuario(nome, usuario, email, senha_hash, nivel_acesso):
+    conexao = obter_conexao()
+
+    try:
+        cursor = conexao.execute(
+            """
+            INSERT INTO usuarios
+            (
+                nome,
+                usuario,
+                email,
+                senha_hash,
+                nivel_acesso
+            )
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                nome,
+                usuario,
+                email,
+                senha_hash,
+                nivel_acesso,
+            ),
+        )
+
+        conexao.commit()
+
+        return cursor.lastrowid
+
+    except Exception:
+        conexao.rollback()
+        raise
+
+    finally:
+        fechar_conexao(conexao)
 
 
-# TODO: atualizar dados de um usuario existente
-def atualizar_usuario(usuario_id, *args, **kwargs):
-    pass
+def atualizar_usuario(
+    usuario_id,
+    nome,
+    usuario,
+    email,
+    nivel_acesso,
+):
+    conexao = obter_conexao()
+
+    try:
+        cursor = conexao.execute(
+            """
+            UPDATE usuarios
+            SET
+                nome = ?,
+                usuario = ?,
+                email = ?,
+                nivel_acesso = ?
+            WHERE id = ?
+            """,
+            (
+                nome,
+                usuario,
+                email,
+                nivel_acesso,
+                usuario_id,
+            ),
+        )
+
+        conexao.commit()
+
+        return cursor.rowcount
+
+    except Exception:
+        conexao.rollback()
+        raise
+
+    finally:
+        fechar_conexao(conexao)
 
 
-# TODO: inativar usuario (exclusao logica, nunca fisica)
 def inativar_usuario(usuario_id):
-    pass
+    conexao = obter_conexao()
+
+    try:
+        cursor = conexao.execute(
+            """
+            UPDATE usuarios
+            SET status = 'INATIVO'
+            WHERE id = ?
+            """,
+            (usuario_id,),
+        )
+
+        conexao.commit()
+
+        return cursor.rowcount
+
+    except Exception:
+        conexao.rollback()
+        raise
+
+    finally:
+        fechar_conexao(conexao)
