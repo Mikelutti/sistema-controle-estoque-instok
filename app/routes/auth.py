@@ -1,30 +1,63 @@
 """
 app/routes/auth.py
 
-Modulo responsavel por: login e logout de usuarios.
-
-Responsabilidade desta camada (routes):
-- Receber requisicoes HTTP relacionadas a autenticacao.
-- Validar dados basicos de entrada (formato).
-- Chamar a camada de services para regras de negocio (quando existir).
-- Renderizar os templates correspondentes.
-
-Nao implementar aqui: regras de negocio complexas (ex: validacao de senha,
-geracao de sessao/token) — isso ficara em app/services futuramente.
+Responsabilidade:
+- Receber requisicoes relacionadas a autenticacao.
+- Exibir a pagina de login.
+- Processar as credenciais.
+- Criar e encerrar a sessao do usuario.
 """
 
-from flask import Blueprint, render_template
+from flask import (
+    Blueprint,
+    flash,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
 
-auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
+from app.services.auth_service import validar_login
 
 
-# TODO: implementar rota de login (GET para exibir formulario, POST para autenticar)
-@auth_bp.route("/login")
+auth_bp = Blueprint(
+    "auth",
+    __name__,
+    url_prefix="/auth",
+)
+
+
+@auth_bp.route("/login", methods=["GET", "POST"])
 def login():
+    if request.method == "POST":
+        login_informado = request.form.get("usuario", "")
+        senha = request.form.get("senha", "")
+
+        try:
+            usuario = validar_login(
+                login_informado,
+                senha,
+            )
+
+            session["usuario_id"] = usuario["id"]
+            session["usuario_nome"] = usuario["nome"]
+            session["nivel_acesso"] = usuario["nivel_acesso"]
+
+            return redirect(
+                url_for("dashboard.index")
+            )
+
+        except ValueError as erro:
+            flash(str(erro), "erro")
+
     return render_template("auth/login.html")
 
 
-# TODO: implementar rota de logout (encerrar sessao do usuario)
-# @auth_bp.route("/logout")
-# def logout():
-#     pass
+@auth_bp.route("/logout")
+def logout():
+    session.clear()
+
+    return redirect(
+        url_for("auth.login")
+    )
