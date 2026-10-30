@@ -12,7 +12,22 @@ Este service nunca armazena ou compara senhas em texto puro.
 
 from werkzeug.security import check_password_hash
 
-from app.repositories.usuario_repository import buscar_usuario_por_login
+from app.repositories.usuario_repository import buscar_usuario_por_id, buscar_usuario_por_login
+
+
+def dados_publicos(usuario):
+    return {campo: usuario[campo] for campo in ("id", "nome", "nivel_acesso")}
+
+
+def obter_usuario_autenticado(usuario_id):
+    """Revalida status e perfil no banco em cada requisição autenticada."""
+    if type(usuario_id) is not int or usuario_id <= 0:
+        return None
+    usuario = buscar_usuario_por_id(usuario_id)
+    if (usuario is None or usuario["status"] != "ATIVO"
+            or usuario["nivel_acesso"] not in ("ADMINISTRADOR", "OPERADOR")):
+        return None
+    return dados_publicos(usuario)
 
 
 def validar_usuario_ativo(usuario):
@@ -21,7 +36,7 @@ def validar_usuario_ativo(usuario):
     """
 
     if usuario["status"] != "ATIVO":
-        raise ValueError("Usuario inativo.")
+        raise ValueError("Usuario ou senha invalidos.")
 
     return True
 
@@ -31,10 +46,11 @@ def verificar_senha(usuario, senha):
     Compara a senha informada com o hash armazenado.
     """
 
-    return check_password_hash(
-        usuario["senha_hash"],
-        senha,
-    )
+    try:
+        return check_password_hash(usuario["senha_hash"], senha)
+    except (ValueError, TypeError):
+        # Registros antigos/irregulares nunca usam comparação em texto puro.
+        return False
 
 
 def validar_login(login, senha):
@@ -60,4 +76,4 @@ def validar_login(login, senha):
     if not verificar_senha(usuario, senha):
         raise ValueError("Usuario ou senha invalidos.")
 
-    return usuario
+    return dados_publicos(usuario)

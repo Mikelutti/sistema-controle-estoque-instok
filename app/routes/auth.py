@@ -11,6 +11,7 @@ Responsabilidade:
 from flask import (
     Blueprint,
     flash,
+    g,
     redirect,
     render_template,
     request,
@@ -30,6 +31,9 @@ auth_bp = Blueprint(
 
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
+    if g.usuario is not None:
+        return redirect(url_for("dashboard.index"))
+
     if request.method == "POST":
         login_informado = request.form.get("usuario", "")
         senha = request.form.get("senha", "")
@@ -40,9 +44,12 @@ def login():
                 senha,
             )
 
+            session.clear()
             session["usuario_id"] = usuario["id"]
-            session["usuario_nome"] = usuario["nome"]
-            session["nivel_acesso"] = usuario["nivel_acesso"]
+            session.permanent = True
+
+            from app.security import csrf_token
+            csrf_token()
 
             return redirect(
                 url_for("dashboard.index")
@@ -54,7 +61,7 @@ def login():
     return render_template("auth/login.html")
 
 
-@auth_bp.route("/logout")
+@auth_bp.route("/logout", methods=["POST"])
 def logout():
     session.clear()
 

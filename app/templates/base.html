@@ -1,36 +1,94 @@
+{% set nav_items = [
+    ('dashboard.index', 'Dashboard', '▦'),
+    ('produtos.index', 'Produtos', '▤'),
+    ('categorias.index', 'Categorias', '◇'),
+    ('setores.index', 'Setores', '⌂'),
+    ('estoque.entrada', 'Entrada de produtos', '↑'),
+    ('estoque.saida', 'Saída de produtos', '↓'),
+    ('estoque.transferencia', 'Transferências', '⇄'),
+    ('estoque.inventario', 'Inventário', '▥'),
+    ('movimentacoes.index', 'Histórico', '◷'),
+    ('alertas.index', 'Alertas', '!'),
+    ('relatorios.index', 'Relatórios', '≡'),
+    ('usuarios.index', 'Usuários', '♙')
+] %}
+{% set page = namespace(title='InStock') %}
+{% for endpoint, label, icon in nav_items %}
+    {% if request.endpoint == endpoint or (request.blueprint != 'estoque' and request.blueprint == endpoint.split('.')[0]) %}
+        {% set page.title = label %}
+    {% endif %}
+{% endfor %}
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR" class="no-js">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Sistema de Controle de Estoque{% endblock %}</title>
-
-    <!-- CSS global carregado em todas as paginas -->
+    <title>{% block title %}{{ page.title }} | InStock{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}">
-
-    <!-- Bloco para CSS especifico de cada pagina, se necessario -->
     {% block extra_css %}{% endblock %}
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
 </head>
-<body>
-
-    <!-- TODO: cabecalho/menu de navegacao do sistema -->
-    <header>
-        <!-- futuramente: logo, nome do sistema e menu -->
-    </header>
-
-    <main>
-        {% block content %}{% endblock %}
-    </main>
-
-    <!-- TODO: rodape do sistema -->
-    <footer>
-        <!-- futuramente: informacoes de rodape -->
-    </footer>
-
-    <!-- JavaScript geral da aplicacao -->
-    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
-
-    <!-- Bloco para JS especifico de cada pagina, se necessario -->
+<body class="{% if g.usuario %}authenticated{% else %}guest{% endif %}">
+    <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
+    {% block layout %}
+    <div class="app-shell">
+        {% if g.usuario %}
+        <aside id="sidebar" class="sidebar" aria-label="Menu do sistema">
+            <div class="sidebar-heading">
+                <a class="logo" href="{{ url_for('index') }}"><span class="logo-mark" aria-hidden="true">▦</span> InStock</a>
+                <button class="sidebar-close icon-btn" type="button" aria-label="Fechar menu" hidden>×</button>
+            </div>
+            <nav aria-label="Navegação principal">
+                {% for endpoint, label, icon in nav_items %}
+                    {% if endpoint != 'usuarios.index' or g.usuario.nivel_acesso == 'ADMINISTRADOR' %}
+                    {% set active = request.endpoint == endpoint or (request.blueprint != 'estoque' and request.blueprint == endpoint.split('.')[0]) %}
+                    <a class="nav-item{% if active %} active{% endif %}" href="{{ url_for(endpoint) }}"{% if active %} aria-current="page"{% endif %}>
+                        <span aria-hidden="true">{{ icon }}</span>{{ label }}
+                    </a>
+                    {% endif %}
+                {% endfor %}
+            </nav>
+            <div class="sidebar-bottom">
+                <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false" hidden>
+                    <span data-theme-icon aria-hidden="true">☾</span><span data-theme-label>Tema escuro</span>
+                </button>
+                <div class="user-mini">
+                    <div class="avatar" aria-hidden="true">{{ g.usuario.nome[:2]|upper }}</div>
+                    <div class="user-copy"><strong>{{ g.usuario.nome }}</strong><small>{{ 'Administrador' if g.usuario.nivel_acesso == 'ADMINISTRADOR' else 'Operador de estoque' }}</small></div>
+                </div>
+                <form action="{{ url_for('auth.logout') }}" method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="logout" type="submit"><span aria-hidden="true">↪</span> Sair</button>
+                </form>
+            </div>
+        </aside>
+        <button class="menu-overlay" type="button" aria-label="Fechar navegação" hidden></button>
+        {% endif %}
+        <div class="content">
+            <header class="topbar">
+                {% if g.usuario %}
+                <button id="menu-toggle" class="menu-toggle icon-btn" type="button" aria-label="Abrir menu" aria-controls="sidebar" aria-expanded="false" hidden>☰</button>
+                <div class="page-heading"><p class="eyebrow">CONTROLE DE ESTOQUE</p><p class="page-title">{{ page.title }}</p></div>
+                {% else %}
+                <a class="logo" href="{{ url_for('index') }}"><span class="logo-mark" aria-hidden="true">▦</span> InStock</a>
+                {% endif %}
+                <div class="header-actions">
+                    <button class="icon-btn" type="button" data-theme-toggle aria-label="Ativar tema escuro" aria-pressed="false" hidden><span data-theme-icon aria-hidden="true">☾</span></button>
+                    {% if g.usuario %}<div class="avatar" aria-hidden="true">{{ g.usuario.nome[:2]|upper }}</div>{% endif %}
+                </div>
+            </header>
+            <main id="conteudo" class="main-content" tabindex="-1">
+                {% include 'partials/mensagens.html' %}
+                <section class="card page-content">{% block content %}{% endblock %}</section>
+            </main>
+            <footer class="site-footer">InStock · Controle de estoque</footer>
+        </div>
+    </div>
+    {% endblock %}
     {% block extra_js %}{% endblock %}
 </body>
 </html>
