@@ -1,9 +1,43 @@
 {% extends "base.html" %}
-
-{% block title %}Login - Sistema de Controle de Estoque{% endblock %}
-
-{% block content %}
-    <h1>Login</h1>
-    <!-- TODO: implementar conteudo real desta pagina -->
-    <p>Pagina de Login em construcao.</p>
+{% block title %}Acesse sua conta | InStock{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+{% endblock %}
+{% block layout %}
+<main id="conteudo" class="login-page" tabindex="-1">
+    <section class="brand-panel" aria-label="InStock">
+        <a class="logo" href="{{ url_for('index') }}"><span class="logo-mark" aria-hidden="true">▦</span> InStock</a>
+        <div class="brand-copy">
+            <p class="eyebrow">GESTÃO INTELIGENTE</p>
+            <h1>Seu estoque sob <em>controle.</em></h1>
+            <p>Uma visão simples e clara para acompanhar cada produto do seu negócio.</p>
+        </div>
+        <div class="orb orb-one" aria-hidden="true"></div>
+        <div class="orb orb-two" aria-hidden="true"></div>
+        <p class="copyright">InStock · Controle de estoque</p>
+    </section>
+    <section class="login-panel" aria-labelledby="login-title">
+        <button class="login-theme icon-btn" type="button" data-theme-toggle aria-label="Ativar tema escuro" aria-pressed="false" hidden><span data-theme-icon aria-hidden="true">☾</span></button>
+        <div class="login-card">
+            <div class="mobile-logo logo"><span class="logo-mark" aria-hidden="true">▦</span> InStock</div>
+            <p class="eyebrow">BEM-VINDO DE VOLTA</p>
+            <h2 id="login-title">Acesse sua conta</h2>
+            <p class="muted">Entre para gerenciar seu estoque.</p>
+            {% include 'partials/mensagens.html' %}
+            <form action="{{ url_for('auth.login') }}" method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <label for="usuario">Usuário</label>
+                <input id="usuario" name="usuario" type="text" autocomplete="username" required
+                       placeholder="Seu usuário" value="{{ request.form.get('usuario', '') }}">
+                <label for="senha">Senha</label>
+                <div class="password-wrap">
+                    <input id="senha" name="senha" type="password" autocomplete="current-password" required placeholder="Digite sua senha">
+                    <button id="toggle-password" type="button" aria-label="Mostrar senha" aria-controls="senha" aria-pressed="false" hidden><span aria-hidden="true">◉</span></button>
+                </div>
+                <button class="btn btn-primary btn-wide" type="submit">Entrar <span aria-hidden="true">→</span></button>
+                <p class="login-help">Use o usuário cadastrado pelo administrador.</p>
+            </form>
+        </div>
+    </section>
+</main>
 {% endblock %}
