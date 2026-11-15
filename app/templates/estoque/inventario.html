@@ -1,9 +1,21 @@
-{% extends "base.html" %}
-
-{% block title %}Inventario - Sistema de Controle de Estoque{% endblock %}
-
+{% extends 'base.html' %}
+{% from 'partials/icones.html' import icone %}
+{% block title %}Inventário | InStok{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/cadastros.css') }}">{% endblock %}
 {% block content %}
-    <h1>Inventario</h1>
-    <!-- TODO: implementar conteudo real desta pagina -->
-    <p>Pagina de Inventario em construcao.</p>
+<h1>Inventário</h1>
+<p>Saldos atuais por produto e setor, incluindo produtos sem movimentação e cadastros inativos. Os saldos só mudam por movimentações registradas.</p>
+<div class="cadastro-form-actions inventory-actions"><a class="btn btn-primary" href="{{ url_for('estoque.entrada') }}">{{ icone("package-plus") }} Registrar entrada</a><a class="btn btn-secondary" href="{{ url_for('estoque.saida') }}">{{ icone("package-minus") }} Registrar saída</a><a class="btn btn-secondary" href="{{ url_for('estoque.transferencia') }}">{{ icone("arrow-left-right") }} Transferir</a><a class="btn btn-tertiary" href="{{ url_for('movimentacoes.index') }}">{{ icone("history") }} Ver histórico</a></div>
+<p class="cadastro-mobile-hint" id="inventario-ajuda">Deslize a tabela para ver todas as colunas.</p>
+<div class="cadastro-table-wrap" role="region" aria-label="Saldos do inventário" tabindex="0" aria-describedby="inventario-ajuda">
+<table class="cadastro-table">
+  <caption class="cadastro-sr-only">Quantidade disponível por produto e setor</caption>
+  <thead><tr><th scope="col">Código</th><th scope="col">Produto</th><th scope="col">Setor</th><th scope="col">Quantidade</th><th scope="col">Estoque mínimo do produto</th></tr></thead>
+  <tbody>{% for registro in registros %}<tr>
+    <td>{{ registro.codigo }}</td><td><strong>{{ registro.produto_nome }}</strong><small>{{ registro.categoria_nome }}</small>{% if registro.produto_status == 'INATIVO' %}<small>Produto inativo</small>{% endif %}</td>
+    <td>{{ registro.setor_nome or 'Sem movimentação' }}{% if registro.setor_status == 'INATIVO' %}<small>Setor inativo</small>{% endif %}</td>
+    <td><strong class="{% if registro.quantidade < registro.estoque_minimo %}quantity-empty{% endif %}">{{ registro.quantidade }}</strong>{% if registro.quantidade == 0 %}<small>Sem saldo neste setor</small>{% elif registro.quantidade < registro.estoque_minimo %}<small>Saldo do setor abaixo do mínimo do produto</small>{% endif %}</td><td>{{ registro.estoque_minimo }}</td>
+  </tr>{% else %}<tr><td colspan="5">Nenhum produto cadastrado.</td></tr>{% endfor %}</tbody>
+</table>
+</div>
 {% endblock %}

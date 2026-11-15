@@ -1,20 +1,10 @@
-"""
-app/routes/movimentacoes.py
-
-Modulo responsavel por: historico de movimentacoes de estoque
-(entradas, saidas e transferencias ja realizadas).
-
-Relacionamentos planejados:
-- usuarios 1:N movimentacoes (quem realizou a movimentacao)
-- produtos 1:N movimentacoes (qual produto foi movimentado)
-"""
-
+"""Histórico de estoque somente para consulta por usuários autenticados."""
 from flask import Blueprint, render_template
+from app.services import movimentacao_service as service
 
 movimentacoes_bp = Blueprint("movimentacoes", __name__, url_prefix="/movimentacoes")
 
 
-# TODO: listar historico de movimentacoes
-@movimentacoes_bp.route("/")
+@movimentacoes_bp.get("/")
 def index():
-    return render_template("movimentacoes/index.html")
+    return render_template("movimentacoes/index.html", registros=service.listar_movimentacoes())

@@ -1,54 +1,50 @@
-"""
-app/services/setor_service.py
-
-Responsabilidade: regras de negocio relacionadas ao cadastro e
-gerenciamento de setores.
-
-Funcoes previstas (a implementar futuramente):
-- validar_setor: validar os dados de um setor antes de
-  criar/atualizar o registro.
-- validar_setor_duplicado: impedir duplicidade de setores (ex: mesmo
-  nome).
-- cadastrar_setor: aplicar as regras de negocio para criacao de um
-  novo setor.
-- atualizar_setor: aplicar as regras de negocio para atualizacao de
-  um setor existente.
-- inativar_setor: aplicar a regra de negocio de inativacao (exclusao
-  logica).
-- impedir_alteracao_com_historico: impedir alteracoes em um setor que
-  comprometam o historico de movimentacoes/estoque associado.
-
-Nesta etapa do projeto, apenas a estrutura esta preparada (sem logica
-implementada), conforme solicitado.
-"""
+"""Regras de setores, incluindo validações sob transação de escrita."""
+from app.repositories import setor_repository as repository
+from app.repositories.estoque_repository import setor_possui_saldo
+from app.services.cadastro_service import (
+    RegistroNaoEncontrado, alteracao_administrativa, identificador, texto,
+)
 
 
-# TODO: implementar validacao geral de setor
-def validar_setor(*args, **kwargs):
-    pass
+def listar_setores():
+    return repository.listar_setores()
 
 
-# TODO: implementar validacao para impedir setores duplicados
-def validar_setor_duplicado(*args, **kwargs):
-    pass
+def obter_setor(setor_id, conexao=None):
+    setor_id = identificador(setor_id)
+    registro = repository.buscar_setor(setor_id, conexao)
+    if registro is None:
+        raise RegistroNaoEncontrado("Setor não encontrado.")
+    return registro
 
 
-# TODO: implementar cadastro de setor
-def cadastrar_setor(*args, **kwargs):
-    pass
+def validar_dados(nome, descricao):
+    return dict(nome=texto(nome, "nome", 150), descricao=texto(descricao, "descrição", 2000, False))
 
 
-# TODO: implementar atualizacao de setor
-def atualizar_setor(setor_id, *args, **kwargs):
-    pass
+def validar_duplicidade(nome, conexao, excluir_id=None):
+    if repository.buscar_duplicado(nome, excluir_id, conexao):
+        raise ValueError("Já existe um setor com esse nome, inclusive entre os inativos.")
 
 
-# TODO: implementar inativacao de setor (exclusao logica)
-def inativar_setor(setor_id):
-    pass
+def cadastrar_setor(nome, descricao="", *, administrador_id):
+    dados = validar_dados(nome, descricao)
+    with alteracao_administrativa(administrador_id) as db:
+        validar_duplicidade(dados["nome"], db)
+        return repository.inserir_setor(**dados, conexao=db)
 
 
-# TODO: impedir alteracoes que comprometam o historico de
-# movimentacoes/estoque associado ao setor
-def impedir_alteracao_com_historico(setor_id):
-    pass
+def atualizar_setor(setor_id, nome, descricao="", *, administrador_id):
+    dados = validar_dados(nome, descricao)
+    with alteracao_administrativa(administrador_id) as db:
+        atual = obter_setor(setor_id, db)
+        validar_duplicidade(dados["nome"], db, atual["id"])
+        repository.atualizar_setor(atual["id"], **dados, conexao=db)
+
+
+def inativar_setor(setor_id, *, administrador_id):
+    with alteracao_administrativa(administrador_id) as db:
+        atual = obter_setor(setor_id, db)
+        if setor_possui_saldo(atual["id"], db):
+            raise ValueError("Não é possível inativar um setor com saldo de estoque.")
+        repository.inativar_setor(atual["id"], db)

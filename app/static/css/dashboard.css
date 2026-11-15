@@ -1,13 +1,50 @@
-/*
-    dashboard.css
+.page-content .dashboard h1 { font-size: clamp(26px, 2.3vw, 28px); font-weight: 700; line-height: 1.2; margin-bottom: 8px; }
+.dashboard-section-title, .painel-acoes > h2 { font-size: 20px; font-weight: 600; margin: var(--section-gap) 0 12px; }
+.dashboard > header p { font-weight: 500; }
+.indicadores, .painel-acoes > div { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--gap); }
+.painel-acoes > div { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.indicador { display: grid; grid-template-rows: subgrid; grid-row: span 3; row-gap: 8px; background: var(--surface-raised); padding: 20px; border: 0; border-radius: 16px; min-width: 0; }
+.indicador header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.indicador h3 { line-height: 1.4; font-size: 14px; font-weight: 600; margin: 0; color: var(--ink); }
+.indicador header .lucide-icon { width: 16px; height: 16px; flex-basis: 16px; color: var(--link); }
+.indicador strong { color: var(--ink); display: block; font-size: 30px; line-height: 1.2; font-weight: 700; font-variant-numeric: tabular-nums; margin: 0; overflow-wrap: anywhere; }
+.indicador footer { padding-top: 8px; }
+.indicador a { font-size: 13px; }
+.painel-acoes { margin: var(--section-gap) 0; }
+.acao-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 16px; cursor: pointer; padding: 20px; color: var(--ink); background: var(--surface-action); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 2px 8px var(--shadow); text-decoration: none; }
+.acao-card strong { font-size: 15px; line-height: 1.4; font-weight: 600; }
+.acao-card::after { content: ""; justify-self: end; width: 6px; height: 6px; border: solid var(--muted); border-width: 1.5px 1.5px 0 0; transform: rotate(45deg); }
+.acao-icone { display: grid; place-items: center; width: 44px; height: 44px; background: var(--page); color: var(--link); border-radius: 12px; }
+.acao-icone .lucide-icon { width: 24px; height: 24px; }
+.acao-texto { display: grid; gap: 4px; }
+.acao-descricao { color: var(--secondary); font-weight: 500; font-size: 13px; line-height: 1.5; }
+.acao-card:focus-visible { border-color: var(--link); }
+@media (hover: hover) {
+    .acao-card:hover { border-color: color-mix(in srgb, var(--link) 50%, var(--line)); box-shadow: 0 6px 16px var(--shadow); }
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .painel-acoes .acao-card { transition: transform var(--duration) ease, border-color var(--duration) ease, box-shadow var(--duration) ease, background-color var(--duration) ease, color var(--duration) ease; }
+    .acao-card:hover { transform: translateY(-2px); }
+}
+.dashboard-notas { border-top: 1px solid var(--line); padding-top: 12px; }
+.dashboard-notas p { margin: 4px 0; }
+.painel-regra { color: var(--muted); font-size: 13px; line-height: 1.7; }
+.painel-aviso { padding: 18px; border: 1px solid var(--line); border-radius: 8px; background: var(--page); }
+.alerta-secao { margin-top: 32px; scroll-margin-top: 20px; }
+.alerta-contagem { display: inline-block; font-size: 15px; padding: 4px 10px; border-radius: 20px; background: var(--page); border: 1px solid var(--line); }
+@media (max-width: 1100px) { .indicadores, .painel-acoes > div { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 920px) { .painel-acoes > div { grid-template-columns: 1fr; } }
+@media (max-width: 520px) { .indicadores, .painel-acoes > div { grid-template-columns: 1fr; } }
 
-    Responsabilidade:
-    Estilos especificos da pagina de dashboard (cards de indicadores,
-    area de alertas, layout em grade).
-
-    Nesta etapa do projeto, apenas a estrutura do arquivo esta preparada.
-*/
-
-/* TODO: estilizar os cards de indicadores do dashboard */
-
-/* TODO: estilizar a area de alertas de estoque */
+/* Palette roles for the dashboard and stock alerts. */
+.page-content:has(.dashboard) { background: var(--page); border: 0; box-shadow: none; padding: 0; }
+.dashboard .indicador:nth-child(3) header .lucide-icon,
+#sem-estoque .alerta-contagem { color: var(--danger); }
+.dashboard .indicador:nth-child(4) header .lucide-icon,
+#estoque-baixo .alerta-contagem { color: var(--warning); }
+#sem-estoque .alerta-contagem { background: var(--danger-bg); border-color: var(--danger); }
+#estoque-baixo .alerta-contagem { background: var(--warning-bg); border-color: var(--warning); }
+.acao-icone, .indicador header .lucide-icon { color: var(--accent); }
+:root[data-theme="dark"] .acao-icone, :root[data-theme="dark"] .indicador header .lucide-icon { color: var(--link); }
+.dashboard .indicador:nth-child(3) header .lucide-icon { color: var(--danger); }
+.dashboard .indicador:nth-child(4) header .lucide-icon { color: var(--warning); }

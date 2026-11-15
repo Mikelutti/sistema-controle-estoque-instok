@@ -1,45 +1,33 @@
-"""
-app/repositories/setor_repository.py
-
-Responsabilidade:
-- Executar todo o SQL relacionado a entidade "setores" (tabela
-  "setores" definida em database/schema.sql).
-- Esta e a UNICA camada autorizada a montar/executar queries de setores.
-- Recebe conexoes de app/database/connection.py.
-- E consumida exclusivamente por app/services/setor_service.py.
-
-Funcoes previstas (a implementar futuramente):
-- listar_setores: retornar todos os setores cadastrados (ativos).
-- buscar_setor: retornar um setor a partir do seu ID.
-- inserir_setor: criar um novo registro de setor.
-- atualizar_setor: atualizar dados de um setor existente.
-- inativar_setor: marcar um setor como inativo (exclusao logica).
-
-Nesta etapa do projeto, apenas a estrutura esta preparada (sem logica
-implementada), conforme solicitado.
-"""
+"""SQL de setores; escritas recebem a conexão transacional do service."""
+from app.database.connection import conexao_consulta
 
 
-# TODO: listar todos os setores cadastrados (considerar apenas ativos)
-def listar_setores():
-    pass
+def listar_setores(conexao=None):
+    with conexao_consulta(conexao) as db:
+        return db.execute("SELECT * FROM setores ORDER BY nome, id").fetchall()
 
 
-# TODO: buscar setor por ID
-def buscar_setor(setor_id):
-    pass
+def buscar_setor(setor_id, conexao=None):
+    with conexao_consulta(conexao) as db:
+        return db.execute("SELECT * FROM setores WHERE id=?", (setor_id,)).fetchone()
 
 
-# TODO: inserir um novo setor
-def inserir_setor(*args, **kwargs):
-    pass
+def buscar_duplicado(nome, excluir_id, conexao):
+    return conexao.execute(
+        "SELECT id FROM setores WHERE nome=? AND (? IS NULL OR id<>?)",
+        (nome, excluir_id, excluir_id)).fetchone()
 
 
-# TODO: atualizar dados de um setor existente
-def atualizar_setor(setor_id, *args, **kwargs):
-    pass
+def inserir_setor(nome, descricao, conexao):
+    return conexao.execute("INSERT INTO setores(nome,descricao) VALUES (?,?)",
+                          (nome, descricao)).lastrowid
 
 
-# TODO: inativar setor (exclusao logica, nunca fisica)
-def inativar_setor(setor_id):
-    pass
+def atualizar_setor(setor_id, nome, descricao, conexao):
+    return conexao.execute("UPDATE setores SET nome=?, descricao=? WHERE id=?",
+                          (nome, descricao, setor_id)).rowcount
+
+
+def inativar_setor(setor_id, conexao):
+    return conexao.execute("UPDATE setores SET status='INATIVO' WHERE id=?",
+                          (setor_id,)).rowcount

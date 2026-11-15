@@ -1,9 +1,38 @@
-{% extends "base.html" %}
-
-{% block title %}Usuarios - Sistema de Controle de Estoque{% endblock %}
-
+{% extends 'base.html' %}
+{% block title %}Usuários | InStok{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/usuarios.css') }}">{% endblock %}
 {% block content %}
-    <h1>Usuarios</h1>
-    <!-- TODO: implementar conteudo real desta pagina -->
-    <p>Pagina de Usuarios em construcao.</p>
+<div class="users-heading">
+  <div><h1>Usuários</h1><p>Gerencie acessos e consulte contas ativas e inativas.</p></div>
+  <a class="btn btn-primary" href="{{ url_for('usuarios.formulario') }}">Cadastrar usuário</a>
+</div>
+<p>{{ usuarios|length }} usuário(s) cadastrado(s). A inativação preserva o histórico.</p>
+<div class="users-table-wrap" role="region" aria-label="Lista de usuários" tabindex="0">
+<table class="users-table">
+  <caption class="sr-only-users">Contas cadastradas, níveis de acesso e situação</caption>
+  <thead><tr><th scope="col">Nome / usuário</th><th scope="col">E-mail</th><th scope="col">Perfil</th><th scope="col">Status</th><th scope="col">Ações</th></tr></thead>
+  <tbody>
+  {% for usuario in usuarios %}
+    <tr>
+      <td><strong>{{ usuario.nome }}</strong><small>{{ usuario.usuario }}{% if usuario.id == g.usuario.id %} · você{% endif %}</small></td>
+      <td>{{ usuario.email }}</td>
+      <td>{{ 'Administrador' if usuario.nivel_acesso == 'ADMINISTRADOR' else 'Operador' }}</td>
+      <td><span class="user-status {{ 'is-active' if usuario.status == 'ATIVO' else '' }}">{{ 'Ativo' if usuario.status == 'ATIVO' else 'Inativo' }}</span></td>
+      <td><div class="user-actions">
+        <a class="btn btn-secondary" href="{{ url_for('usuarios.editar', usuario_id=usuario.id) }}" aria-label="Editar {{ usuario.usuario }}">Editar</a>
+        {% if usuario.status == 'ATIVO' %}
+        <details><summary aria-label="Inativar {{ usuario.usuario }}">Inativar</summary>
+          <p>Bloquear o acesso de {{ usuario.usuario }}? O histórico será mantido.</p>
+          <form method="post" action="{{ url_for('usuarios.inativar', usuario_id=usuario.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-danger" type="submit">Confirmar inativação</button>
+          </form>
+        </details>
+        {% endif %}
+      </div></td>
+    </tr>
+  {% else %}<tr><td colspan="5">Nenhum usuário cadastrado.</td></tr>{% endfor %}
+  </tbody>
+</table>
+</div>
 {% endblock %}

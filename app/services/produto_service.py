@@ -1,60 +1,64 @@
-"""
-app/services/produto_service.py
-
-Responsabilidade: regras de negocio relacionadas ao cadastro e
-gerenciamento de produtos.
-
-Funcoes previstas (a implementar futuramente):
-- validar_cadastro: validar os dados de um novo produto antes de
-  criar o registro.
-- validar_codigo_unico: impedir cadastro de produtos com codigo
-  duplicado.
-- validar_estoque_minimo: validar o valor informado de estoque
-  minimo.
-- validar_categoria: garantir que a categoria informada existe e
-  esta ativa.
-- atualizar_produto: aplicar as regras de negocio para atualizacao
-  de um produto existente.
-- inativar_produto: aplicar a regra de negocio de inativacao quando o
-  produto possuir historico (exclusao logica, nunca fisica).
-
-IMPORTANTE:
-Este service nunca deve controlar a quantidade atual de um produto
-diretamente atraves da tabela "produtos". A quantidade e sempre
-tratada via app/services/estoque_service.py e
-app/repositories/estoque_repository.py (tabela "estoques").
-
-Nesta etapa do projeto, apenas a estrutura esta preparada (sem logica
-implementada), conforme solicitado.
-"""
+"""Cadastro de produtos sem alteração de estoque ou histórico."""
+from app.repositories import produto_repository as repository, categoria_repository
+from app.repositories.estoque_repository import produto_possui_saldo
+from app.services.cadastro_service import (
+    RegistroNaoEncontrado, alteracao_administrativa, identificador, inteiro, texto,
+)
 
 
-# TODO: implementar validacao geral de cadastro de produto
-def validar_cadastro(*args, **kwargs):
-    pass
+def listar_produtos():
+    return repository.listar_produtos()
 
 
-# TODO: implementar validacao de codigo unico do produto
-def validar_codigo_unico(codigo):
-    pass
+def obter_produto(produto_id, conexao=None):
+    produto_id = identificador(produto_id)
+    produto = repository.buscar_produto_por_id(produto_id, conexao)
+    if produto is None:
+        raise RegistroNaoEncontrado("Produto não encontrado.")
+    return produto
 
 
-# TODO: implementar validacao do valor de estoque minimo
-def validar_estoque_minimo(estoque_minimo):
-    pass
+def categorias_para_formulario(produto=None):
+    return [c for c in categoria_repository.listar_categorias()
+            if c["status"] == "ATIVO" or (produto is not None and c["id"] == produto["categoria_id"])]
 
 
-# TODO: implementar validacao da categoria informada (existe/ativa)
-def validar_categoria(categoria_id):
-    pass
+def validar_dados(codigo, nome, descricao, categoria_id, estoque_minimo):
+    return dict(codigo=texto(codigo, "código", 80), nome=texto(nome, "nome", 150),
+                descricao=texto(descricao, "descrição", 2000, False),
+                categoria_id=inteiro(categoria_id, "categoria", 1),
+                estoque_minimo=inteiro(estoque_minimo, "estoque mínimo"))
 
 
-# TODO: implementar atualizacao de produto
-def atualizar_produto(produto_id, *args, **kwargs):
-    pass
+def validar_relacoes(dados, conexao, atual=None):
+    categoria = categoria_repository.buscar_categoria(dados["categoria_id"], conexao)
+    if categoria is None:
+        raise ValueError("Selecione uma categoria existente.")
+    mantendo_vinculo = atual is not None and atual["categoria_id"] == categoria["id"]
+    if categoria["status"] != "ATIVO" and not mantendo_vinculo:
+        raise ValueError("Selecione uma categoria ativa para a nova associação.")
+    if repository.buscar_duplicado(dados["codigo"], atual["id"] if atual else None, conexao):
+        raise ValueError("Já existe um produto com esse código, inclusive entre os inativos.")
 
 
-# TODO: implementar inativacao de produto (exclusao logica quando
-# houver historico associado)
-def inativar_produto(produto_id):
-    pass
+def cadastrar_produto(codigo, nome, descricao, categoria_id, estoque_minimo, *, administrador_id):
+    dados = validar_dados(codigo, nome, descricao, categoria_id, estoque_minimo)
+    with alteracao_administrativa(administrador_id) as db:
+        validar_relacoes(dados, db)
+        return repository.inserir_produto(**dados, conexao=db)
+
+
+def atualizar_produto(produto_id, codigo, nome, descricao, categoria_id, estoque_minimo, *, administrador_id):
+    dados = validar_dados(codigo, nome, descricao, categoria_id, estoque_minimo)
+    with alteracao_administrativa(administrador_id) as db:
+        atual = obter_produto(produto_id, db)
+        validar_relacoes(dados, db, atual)
+        repository.atualizar_produto(atual["id"], **dados, conexao=db)
+
+
+def inativar_produto(produto_id, *, administrador_id):
+    with alteracao_administrativa(administrador_id) as db:
+        atual = obter_produto(produto_id, db)
+        if produto_possui_saldo(atual["id"], db):
+            raise ValueError("Não é possível inativar um produto com saldo em algum setor.")
+        repository.inativar_produto(atual["id"], db)

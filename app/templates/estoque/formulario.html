@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% from 'estoque/_campos.html' import selecao %}
+{% block title %}{{ titulo }} | InStok{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/cadastros.css') }}">{% endblock %}
+{% block content %}
+<h1>{{ titulo }}</h1>
+<p>{% if tipo == 'ENTRADA' %}Adicione unidades ao setor de destino.{% elif tipo == 'SAIDA' %}Retire unidades do setor de origem. A quantidade deve estar disponível nesse setor.{% else %}Mova unidades entre dois setores diferentes. A quantidade total do produto será mantida.{% endif %} A operação será registrada no histórico com seu usuário.</p>
+{% if not produtos or not setores or (tipo == 'TRANSFERENCIA' and setores|length < 2) %}
+<div class="message" role="alert">É necessário um produto ativo e {{ 'dois setores ativos' if tipo == 'TRANSFERENCIA' else 'um setor ativo' }} para movimentar. Consulte <a href="{{ url_for('produtos.index') }}">Produtos</a> e <a href="{{ url_for('setores.index') }}">Setores</a>; solicite os cadastros ao administrador.</div>
+{% endif %}
+<form method="post" class="cadastro-form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="cadastro-fields">
+    {{ selecao('produto_id', 'Produto', produtos, dados, true) }}
+    {% if tipo != 'ENTRADA' %}{{ selecao('setor_origem_id', 'Setor de origem', setores, dados) }}{% endif %}
+    {% if tipo != 'SAIDA' %}{{ selecao('setor_destino_id', 'Setor de destino', setores, dados) }}{% endif %}
+    <div><label for="quantidade">Quantidade *</label><input id="quantidade" name="quantidade" inputmode="numeric" pattern="[0-9]{1,19}" maxlength="19" value="{{ dados.get('quantidade', '') }}" required aria-describedby="quantidade-ajuda"><small id="quantidade-ajuda">Informe unidades inteiras, maiores que zero. Confira o saldo no <a href="{{ url_for('estoque.inventario') }}">inventário</a>.</small></div>
+    <div class="cadastro-full"><label for="observacao">Motivo da movimentação *</label><textarea id="observacao" name="observacao" maxlength="2000" rows="3" aria-describedby="observacao-ajuda" required>{{ dados.get('observacao', '') }}</textarea><small id="observacao-ajuda">Obrigatório, até 2000 caracteres. Explique por que a entrada, saída ou transferência está sendo realizada. O motivo ficará no histórico.</small></div>
+  </div>
+  <div class="cadastro-form-actions"><button type="submit" class="btn btn-primary" {% if not produtos or not setores or (tipo == 'TRANSFERENCIA' and setores|length < 2) %}disabled{% endif %}>Registrar {{ 'entrada' if tipo == 'ENTRADA' else 'saída' if tipo == 'SAIDA' else 'transferência' }}</button><a class="btn btn-tertiary" href="{{ url_for('estoque.inventario') }}">Cancelar</a></div>
+</form>
+{% endblock %}

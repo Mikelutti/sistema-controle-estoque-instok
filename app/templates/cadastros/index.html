@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}{{ titulo }} | InStok{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/cadastros.css') }}">{% endblock %}
+{% block content %}
+{% set administrador = g.usuario.nivel_acesso == 'ADMINISTRADOR' %}
+<div class="cadastro-heading">
+  <div><h1>{{ titulo }}</h1><p>Consulte registros ativos e inativos{% if administrador %} e gerencie seus dados{% endif %}.</p></div>
+  {% if administrador %}<a class="btn btn-primary" href="{{ url_for(modulo + '.formulario') }}">Cadastrar {{ entidade }}</a>{% endif %}
+</div>
+<p>{{ registros|length }} registro(s). {% if administrador %}A inativação preserva os vínculos e o histórico.{% endif %}</p>
+<p class="cadastro-mobile-hint" id="tabela-ajuda">Deslize a tabela para ver todas as colunas.</p>
+<div class="cadastro-table-wrap" role="region" aria-label="Lista de {{ titulo|lower }}" tabindex="0" aria-describedby="tabela-ajuda">
+<table class="cadastro-table">
+  <caption class="cadastro-sr-only">{{ titulo }}: dados e situação dos registros</caption>
+  <thead><tr>{% if produto %}<th scope="col">Código</th>{% endif %}<th scope="col">Nome</th><th scope="col">Descrição</th>{% if produto %}<th scope="col">Categoria</th><th scope="col">Estoque mínimo</th>{% endif %}<th scope="col">Status</th>{% if administrador %}<th scope="col">Ações</th>{% endif %}</tr></thead>
+  <tbody>
+  {% for registro in registros %}
+    <tr>
+      {% if produto %}<td>{{ registro.codigo }}</td>{% endif %}
+      <td><strong>{{ registro.nome }}</strong></td><td class="cadastro-descricao">{{ registro.descricao or '—' }}</td>
+      {% if produto %}<td>{{ registro.categoria_nome }}{% if registro.categoria_status == 'INATIVO' %}<small>Categoria inativa</small>{% endif %}</td><td>{{ registro.estoque_minimo }}</td>{% endif %}
+      <td><span class="cadastro-status {{ 'is-active' if registro.status == 'ATIVO' else '' }}">{{ 'Ativo' if registro.status == 'ATIVO' else 'Inativo' }}</span></td>
+      {% if administrador %}<td><div class="cadastro-actions">
+        <a class="btn btn-secondary" href="{{ url_for(modulo + '.editar', registro_id=registro.id) }}" aria-label="Editar {{ registro.nome }}">Editar</a>
+        {% if registro.status == 'ATIVO' %}<details><summary aria-label="Inativar {{ registro.nome }}">Inativar</summary>
+          <p>Inativar {{ registro.nome }}? Seus vínculos e histórico serão mantidos.</p>
+          <form method="post" action="{{ url_for(modulo + '.inativar', registro_id=registro.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn cadastro-danger" type="submit">Confirmar inativação</button>
+          </form>
+        </details>{% endif %}
+      </div></td>{% endif %}
+    </tr>
+  {% else %}<tr><td colspan="{{ (7 if produto else 4) if administrador else (6 if produto else 3) }}">Nenhum registro cadastrado.{% if administrador %} Use o botão acima para começar.{% endif %}</td></tr>{% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

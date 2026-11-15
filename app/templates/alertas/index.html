@@ -1,9 +1,18 @@
-{% extends "base.html" %}
-
-{% block title %}Alertas - Sistema de Controle de Estoque{% endblock %}
-
+{% extends 'base.html' %}
+{% block title %}Alertas | InStok{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/cadastros.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">{% endblock %}
 {% block content %}
-    <h1>Alertas</h1>
-    <!-- TODO: implementar conteudo real desta pagina -->
-    <p>Pagina de Alertas em construcao.</p>
+<p class="eyebrow">ATENÇÃO AO ESTOQUE</p><h1>Alertas de estoque</h1>
+<p>Produtos ativos, considerando o saldo total de todos os setores. Os alertas são recalculados ao abrir ou atualizar esta página.</p>
+<div class="cadastro-form-actions"><a class="btn btn-primary" href="{{ url_for('estoque.entrada') }}">Registrar entrada</a><a class="btn btn-secondary" href="{{ url_for('estoque.inventario') }}">Consultar inventário por setor</a></div>
+{% if not resumo.total_produtos %}<p class="painel-aviso">Nenhum produto ativo. Cadastre produtos para acompanhar os alertas.</p>{% endif %}
+{% for id, titulo, registros, explicacao in [('sem-estoque', 'Sem estoque', resumo.sem_estoque, 'Saldo total igual a zero, inclusive produtos sem movimentação.'), ('estoque-baixo', 'Estoque baixo', resumo.estoque_baixo, 'Saldo positivo menor ou igual ao mínimo cadastrado. Não inclui produtos sem estoque.')] %}
+<section class="alerta-secao" id="{{ id }}" aria-labelledby="titulo-{{ id }}">
+<h2 id="titulo-{{ id }}">{{ titulo }} <span class="alerta-contagem">{{ registros|length }}</span></h2><p>{{ explicacao }}</p>
+{% if registros %}
+<div class="cadastro-table-wrap" role="region" aria-label="{{ titulo }}" tabindex="0">
+<table class="cadastro-table"><caption class="cadastro-sr-only">Produtos: {{ titulo }}</caption><thead><tr><th scope="col">Código</th><th scope="col">Produto</th><th scope="col">Categoria</th><th scope="col">Saldo total</th><th scope="col">Mínimo</th></tr></thead>
+<tbody>{% for p in registros %}<tr><td>{{ p.codigo }}</td><td>{{ p.nome }}</td><td>{{ p.categoria }}</td><td>{{ p.quantidade }}</td><td>{{ p.minimo }}</td></tr>{% endfor %}</tbody></table></div>
+{% else %}<p class="painel-aviso">Nenhum produto nesta situação.</p>{% endif %}
+</section>{% endfor %}
 {% endblock %}

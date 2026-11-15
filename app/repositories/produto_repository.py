@@ -1,63 +1,46 @@
-"""
-app/repositories/produto_repository.py
-
-Responsabilidade:
-- Executar todo o SQL relacionado a entidade "produtos" (tabela
-  "produtos" definida em database/schema.sql).
-- Esta e a UNICA camada autorizada a montar/executar queries de produtos.
-- Recebe conexoes de app/database/connection.py.
-- E consumida exclusivamente por app/services/produto_service.py.
-
-IMPORTANTE:
-A quantidade atual de um produto NUNCA e armazenada na tabela
-"produtos". Isso e responsabilidade da tabela "estoques", tratada em
-app/repositories/estoque_repository.py.
-
-Funcoes previstas (a implementar futuramente):
-- listar_produtos: retornar todos os produtos cadastrados (ativos).
-- buscar_produto_por_id: retornar um produto a partir do seu ID.
-- buscar_produto_por_codigo: retornar um produto a partir do codigo.
-- inserir_produto: criar um novo registro de produto.
-- atualizar_produto: atualizar dados de um produto existente.
-- inativar_produto: marcar um produto como inativo (exclusao logica).
-- consultar_estoque_minimo: retornar o valor de estoque_minimo
-  configurado para um produto.
-
-Nesta etapa do projeto, apenas a estrutura esta preparada (sem logica
-implementada), conforme solicitado.
-"""
+"""SQL de produtos; saldos pertencem exclusivamente ao repository de estoque."""
+from app.database.connection import conexao_consulta
 
 
-# TODO: listar todos os produtos cadastrados (considerar apenas ativos)
-def listar_produtos():
-    pass
+def listar_produtos(conexao=None):
+    with conexao_consulta(conexao) as db:
+        return db.execute(
+            "SELECT p.*, c.nome AS categoria_nome, c.status AS categoria_status "
+            "FROM produtos p JOIN categorias c ON c.id=p.categoria_id ORDER BY p.nome,p.id"
+        ).fetchall()
 
 
-# TODO: buscar produto por ID
-def buscar_produto_por_id(produto_id):
-    pass
+def buscar_produto_por_id(produto_id, conexao=None):
+    with conexao_consulta(conexao) as db:
+        return db.execute("SELECT * FROM produtos WHERE id=?", (produto_id,)).fetchone()
 
 
-# TODO: buscar produto por codigo
-def buscar_produto_por_codigo(codigo):
-    pass
+def buscar_produto_por_codigo(codigo, conexao=None):
+    with conexao_consulta(conexao) as db:
+        return db.execute("SELECT * FROM produtos WHERE codigo=?", (codigo,)).fetchone()
 
 
-# TODO: inserir um novo produto
-def inserir_produto(*args, **kwargs):
-    pass
+def buscar_duplicado(codigo, excluir_id, conexao):
+    return conexao.execute("SELECT id FROM produtos WHERE codigo=? AND (? IS NULL OR id<>?)",
+                          (codigo, excluir_id, excluir_id)).fetchone()
 
 
-# TODO: atualizar dados de um produto existente
-def atualizar_produto(produto_id, *args, **kwargs):
-    pass
+def inserir_produto(codigo, nome, descricao, categoria_id, estoque_minimo, conexao):
+    return conexao.execute(
+        "INSERT INTO produtos(codigo,nome,descricao,categoria_id,estoque_minimo) VALUES (?,?,?,?,?)",
+        (codigo, nome, descricao, categoria_id, estoque_minimo)).lastrowid
 
 
-# TODO: inativar produto (exclusao logica, nunca fisica)
-def inativar_produto(produto_id):
-    pass
+def atualizar_produto(produto_id, codigo, nome, descricao, categoria_id, estoque_minimo, conexao):
+    return conexao.execute(
+        "UPDATE produtos SET codigo=?,nome=?,descricao=?,categoria_id=?,estoque_minimo=? WHERE id=?",
+        (codigo, nome, descricao, categoria_id, estoque_minimo, produto_id)).rowcount
 
 
-# TODO: consultar o estoque_minimo configurado para um produto
+def inativar_produto(produto_id, conexao):
+    return conexao.execute("UPDATE produtos SET status='INATIVO' WHERE id=?", (produto_id,)).rowcount
+
+
 def consultar_estoque_minimo(produto_id):
-    pass
+    produto = buscar_produto_por_id(produto_id)
+    return produto["estoque_minimo"] if produto else None

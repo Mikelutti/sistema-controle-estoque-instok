@@ -1,5 +1,24 @@
 # Integração visual do frontend da equipe
 
+## Referência conferida em 09/11/2026
+
+Repositório da equipe: https://github.com/Mikelutti/sistema-controle-estoque-instok.
+A branch `main` aponta para `d8247a287a41ac9fbc2f06dff078ce09c52920c2`
+(02/11/2026). A branch `corrigir-grafia-instok` aponta para
+`fe7c9942b2f312186e4c39e26b36058783194825` (07/11/2026), a revisão mais
+recente encontrada nas branches publicadas durante esta consulta.
+
+O commit mais recente corrige InStock para InStok no protótipo, templates e
+documentação. A aplicação Flask local já contém essa correção. O frontend da
+`main` é idêntico ao frontend de `f999815`, referência usada na integração inicial.
+O merge de novembro inclui a autenticação e integração visual de `5c8ebd2`.
+Não há novas funcionalidades de frontend nessa comparação.
+
+Comparação realizada em clone temporário, sem alterar HEAD, remotes ou index do
+projeto local. Alterações locais de usuários, cadastros e estoque foram
+preservadas; nenhum merge, commit, push ou alteração de banco foi realizado.
+Próximo planejamento aguardará o relatório solicitado pelo responsável.
+
 Entrega autorizada: integrar login e navegação, testar no navegador e criar
 commit local. Em 30/10/2026, o responsável solicitou também atualizar o
 repositório GitHub. O banco existente permanece sem alterações.
@@ -7,7 +26,7 @@ repositório GitHub. O banco existente permanece sem alterações.
 Referência visual: https://github.com/Mikelutti/sistema-controle-estoque-instok/commit/f999815540e44fd1ca8e051efb99d355382860e1
 
 Arquivos de origem: `InStock Controle de Estoque frontend/index.html`,
-`styles.css` e `script.js`. Preservar identidade InStock, azul-marinho,
+`styles.css` e `script.js`. Preservar identidade InStok, azul-marinho,
 tipografia Manrope com fallback local, painel do login, menu lateral e temas.
 
 ## Abordagem

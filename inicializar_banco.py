@@ -1,48 +1,28 @@
-from pathlib import Path
+"""Prepara tabelas e índices do banco configurado em uma única transação."""
+import sqlite3
+from contextlib import closing
 
-from app.database.connection import obter_conexao, fechar_conexao
+from app.database.connection import BASE_DIR, obter_conexao
 
 
 def inicializar_banco():
-    caminho_schema = Path("database/schema.sql")
-
-    if not caminho_schema.exists():
-        print("ERRO: database/schema.sql nao foi encontrado.")
-        return
-
-    conexao = obter_conexao()
-
-    try:
-        schema = caminho_schema.read_text(encoding="utf-8")
-
-        conexao.executescript(schema)
-        conexao.commit()
-
-        print("Schema executado com sucesso.")
-
-        # Verifica as tabelas existentes no banco
-        tabelas = conexao.execute(
-            """
-            SELECT name
-            FROM sqlite_master
-            WHERE type = 'table'
-            AND name != 'sqlite_sequence'
-            ORDER BY name
-            """
-        ).fetchall()
-
-        print("\nTabelas encontradas:")
-
-        for tabela in tabelas:
-            print(f"- {tabela['name']}")
-
-    except Exception as erro:
-        conexao.rollback()
-        print(f"Erro ao criar banco: {erro}")
-
-    finally:
-        fechar_conexao(conexao)
+    schema = (BASE_DIR / "database/schema.sql").read_text(encoding="utf-8")
+    with closing(obter_conexao()) as db:
+        try:
+            db.executescript("BEGIN IMMEDIATE;\n" + schema)
+            if db.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
+                raise RuntimeError("A verificação de integridade falhou.")
+            if db.execute("PRAGMA foreign_key_check").fetchone():
+                raise RuntimeError("Há referências inválidas no banco.")
+            db.commit()
+        except Exception:
+            db.rollback()
+            raise
+    print("Banco inicializado e integridade verificada.")
 
 
 if __name__ == "__main__":
-    inicializar_banco()
+    try:
+        inicializar_banco()
+    except (OSError, RuntimeError, sqlite3.Error) as erro:
+        raise SystemExit(f"Falha na inicialização: {erro}")

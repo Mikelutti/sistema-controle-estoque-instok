@@ -1,46 +1,47 @@
-"""
-app/services/categoria_service.py
-
-Responsabilidade: regras de negocio relacionadas ao cadastro e
-gerenciamento de categorias de produtos.
-
-Funcoes previstas (a implementar futuramente):
-- validar_categoria: validar os dados de uma categoria antes de
-  criar/atualizar o registro.
-- validar_categoria_duplicada: impedir duplicidade de categorias
-  (ex: mesmo nome).
-- cadastrar_categoria: aplicar as regras de negocio para criacao de
-  uma nova categoria.
-- atualizar_categoria: aplicar as regras de negocio para atualizacao
-  de uma categoria existente.
-- inativar_categoria: aplicar a regra de negocio de inativacao
-  (exclusao logica).
-
-Nesta etapa do projeto, apenas a estrutura esta preparada (sem logica
-implementada), conforme solicitado.
-"""
+"""Regras de categorias, incluindo validações sob transação de escrita."""
+from app.repositories import categoria_repository as repository
+from app.services.cadastro_service import (
+    RegistroNaoEncontrado, alteracao_administrativa, identificador, texto,
+)
 
 
-# TODO: implementar validacao geral de categoria
-def validar_categoria(*args, **kwargs):
-    pass
+def listar_categorias():
+    return repository.listar_categorias()
 
 
-# TODO: implementar validacao para impedir categorias duplicadas
-def validar_categoria_duplicada(*args, **kwargs):
-    pass
+def obter_categoria(categoria_id, conexao=None):
+    categoria_id = identificador(categoria_id)
+    registro = repository.buscar_categoria(categoria_id, conexao)
+    if registro is None:
+        raise RegistroNaoEncontrado("Categoria não encontrada.")
+    return registro
 
 
-# TODO: implementar cadastro de categoria
-def cadastrar_categoria(*args, **kwargs):
-    pass
+def validar_dados(nome, descricao):
+    return dict(nome=texto(nome, "nome", 150), descricao=texto(descricao, "descrição", 2000, False))
 
 
-# TODO: implementar atualizacao de categoria
-def atualizar_categoria(categoria_id, *args, **kwargs):
-    pass
+def validar_duplicidade(nome, conexao, excluir_id=None):
+    if repository.buscar_duplicado(nome, excluir_id, conexao):
+        raise ValueError("Já existe uma categoria com esse nome, inclusive entre os inativos.")
 
 
-# TODO: implementar inativacao de categoria (exclusao logica)
-def inativar_categoria(categoria_id):
-    pass
+def cadastrar_categoria(nome, descricao="", *, administrador_id):
+    dados = validar_dados(nome, descricao)
+    with alteracao_administrativa(administrador_id) as db:
+        validar_duplicidade(dados["nome"], db)
+        return repository.inserir_categoria(**dados, conexao=db)
+
+
+def atualizar_categoria(categoria_id, nome, descricao="", *, administrador_id):
+    dados = validar_dados(nome, descricao)
+    with alteracao_administrativa(administrador_id) as db:
+        atual = obter_categoria(categoria_id, db)
+        validar_duplicidade(dados["nome"], db, atual["id"])
+        repository.atualizar_categoria(atual["id"], **dados, conexao=db)
+
+
+def inativar_categoria(categoria_id, *, administrador_id):
+    with alteracao_administrativa(administrador_id) as db:
+        atual = obter_categoria(categoria_id, db)
+        repository.inativar_categoria(atual["id"], db)
