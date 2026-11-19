@@ -1,12 +1,6 @@
-/* Somente preferencia visual. Dados e autenticacao pertencem ao servidor. */
+/* Cada carregamento inicia no tema escuro, antes da exibição da página. */
 (() => {
     const root = document.documentElement;
     root.classList.replace("no-js", "js");
-    let theme = "light";
-    try {
-        if (localStorage.getItem("instock-theme") === "dark") theme = "dark";
-    } catch {
-        // O login permanece utilizavel quando o navegador bloqueia armazenamento.
-    }
-    root.dataset.theme = theme;
+    root.dataset.theme = "dark";
 })();

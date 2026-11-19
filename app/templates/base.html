@@ -1,18 +1,19 @@
+{% from 'partials/icones.html' import icone, tema %}
 {% set nav_items = [
-    ('dashboard.index', 'Dashboard', '▦'),
-    ('produtos.index', 'Produtos', '▤'),
-    ('categorias.index', 'Categorias', '◇'),
-    ('setores.index', 'Setores', '⌂'),
-    ('estoque.entrada', 'Entrada de produtos', '↑'),
-    ('estoque.saida', 'Saída de produtos', '↓'),
-    ('estoque.transferencia', 'Transferências', '⇄'),
-    ('estoque.inventario', 'Inventário', '▥'),
-    ('movimentacoes.index', 'Histórico', '◷'),
-    ('alertas.index', 'Alertas', '!'),
-    ('relatorios.index', 'Relatórios', '≡'),
-    ('usuarios.index', 'Usuários', '♙')
+    ('dashboard.index', 'Dashboard', 'layout-dashboard'),
+    ('produtos.index', 'Produtos', 'package'),
+    ('categorias.index', 'Categorias', 'tags'),
+    ('setores.index', 'Setores', 'network'),
+    ('estoque.entrada', 'Entrada de produtos', 'package-plus'),
+    ('estoque.saida', 'Saída de produtos', 'package-minus'),
+    ('estoque.transferencia', 'Transferências', 'arrow-left-right'),
+    ('estoque.inventario', 'Inventário', 'boxes'),
+    ('movimentacoes.index', 'Histórico', 'history'),
+    ('alertas.index', 'Alertas', 'triangle-alert'),
+    ('relatorios.index', 'Relatórios', 'file-chart-column'),
+    ('usuarios.index', 'Usuários', 'users')
 ] %}
-{% set page = namespace(title='InStock') %}
+{% set page = namespace(title=titulo|default('Página', true)) %}
 {% for endpoint, label, icon in nav_items %}
     {% if request.endpoint == endpoint or (request.blueprint != 'estoque' and request.blueprint == endpoint.split('.')[0]) %}
         {% set page.title = label %}
@@ -23,10 +24,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}{{ page.title }} | InStock{% endblock %}</title>
+    <title>{% block title %}{{ page.title }} | InStok{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}">
     {% block extra_css %}{% endblock %}
     <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
@@ -39,30 +40,27 @@
         {% if g.usuario %}
         <aside id="sidebar" class="sidebar" aria-label="Menu do sistema">
             <div class="sidebar-heading">
-                <a class="logo" href="{{ url_for('index') }}"><span class="logo-mark" aria-hidden="true">▦</span> InStock</a>
-                <button class="sidebar-close icon-btn" type="button" aria-label="Fechar menu" hidden>×</button>
+                <a class="logo" aria-label="InStok" title="InStok" href="{{ url_for('index') }}"><span class="official-mark" aria-hidden="true"></span><span class="sidebar-label">InStok</span></a>
+                <button class="sidebar-close icon-btn" type="button" aria-label="Fechar menu" hidden>{{ icone("x") }}</button>
             </div>
             <nav aria-label="Navegação principal">
                 {% for endpoint, label, icon in nav_items %}
                     {% if endpoint != 'usuarios.index' or g.usuario.nivel_acesso == 'ADMINISTRADOR' %}
                     {% set active = request.endpoint == endpoint or (request.blueprint != 'estoque' and request.blueprint == endpoint.split('.')[0]) %}
-                    <a class="nav-item{% if active %} active{% endif %}" href="{{ url_for(endpoint) }}"{% if active %} aria-current="page"{% endif %}>
-                        <span aria-hidden="true">{{ icon }}</span>{{ label }}
+                    <a class="nav-item{% if active %} active{% endif %}" aria-label="{{ label }}" title="{{ label }}" href="{{ url_for(endpoint) }}"{% if active %} aria-current="page"{% endif %}>
+                        {{ icone(icon) }}<span class="sidebar-label">{{ label }}</span>
                     </a>
                     {% endif %}
                 {% endfor %}
             </nav>
             <div class="sidebar-bottom">
-                <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false" hidden>
-                    <span data-theme-icon aria-hidden="true">☾</span><span data-theme-label>Tema escuro</span>
-                </button>
                 <div class="user-mini">
                     <div class="avatar" aria-hidden="true">{{ g.usuario.nome[:2]|upper }}</div>
                     <div class="user-copy"><strong>{{ g.usuario.nome }}</strong><small>{{ 'Administrador' if g.usuario.nivel_acesso == 'ADMINISTRADOR' else 'Operador de estoque' }}</small></div>
                 </div>
                 <form action="{{ url_for('auth.logout') }}" method="post">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button class="logout" type="submit"><span aria-hidden="true">↪</span> Sair</button>
+                    <button class="logout" type="submit" aria-label="Sair" title="Sair">{{ icone("log-out") }}<span class="sidebar-label">Sair</span></button>
                 </form>
             </div>
         </aside>
@@ -71,13 +69,18 @@
         <div class="content">
             <header class="topbar">
                 {% if g.usuario %}
-                <button id="menu-toggle" class="menu-toggle icon-btn" type="button" aria-label="Abrir menu" aria-controls="sidebar" aria-expanded="false" hidden>☰</button>
-                <div class="page-heading"><p class="eyebrow">CONTROLE DE ESTOQUE</p><p class="page-title">{{ page.title }}</p></div>
-                {% else %}
-                <a class="logo" href="{{ url_for('index') }}"><span class="logo-mark" aria-hidden="true">▦</span> InStock</a>
+                <button id="menu-toggle" class="menu-toggle icon-btn" type="button" aria-label="Abrir menu" aria-controls="sidebar" aria-expanded="false" hidden>{{ icone("menu") }}</button>
+                {% endif %}
+                <div class="page-heading"><p class="page-title">{{ page.title }}</p></div>
+                {% if g.usuario %}
+                <form class="page-search" role="search" hidden>
+                    <input type="search" list="header-pages" required placeholder="Buscar página" aria-label="Buscar página">
+                    <datalist id="header-pages"></datalist>
+                </form>
                 {% endif %}
                 <div class="header-actions">
-                    <button class="icon-btn" type="button" data-theme-toggle aria-label="Ativar tema escuro" aria-pressed="false" hidden><span data-theme-icon aria-hidden="true">☾</span></button>
+                    {% if g.usuario %}<a class="icon-btn" href="{{ url_for('alertas.index') }}" aria-label="Alertas de estoque" title="Alertas de estoque">{{ icone("triangle-alert") }}</a>{% endif %}
+                    <button class="icon-btn" type="button" data-theme-toggle aria-label="Ativar tema escuro" aria-pressed="false" hidden>{{ tema() }}</button>
                     {% if g.usuario %}<div class="avatar" aria-hidden="true">{{ g.usuario.nome[:2]|upper }}</div>{% endif %}
                 </div>
             </header>
@@ -85,7 +88,7 @@
                 {% include 'partials/mensagens.html' %}
                 <section class="card page-content">{% block content %}{% endblock %}</section>
             </main>
-            <footer class="site-footer">InStock · Controle de estoque</footer>
+            <footer class="site-footer">InStok · Controle de estoque</footer>
         </div>
     </div>
     {% endblock %}

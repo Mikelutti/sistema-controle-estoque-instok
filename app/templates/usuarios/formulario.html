@@ -1,9 +1,21 @@
-{% extends "base.html" %}
-
-{% block title %}Cadastro de Usuario - Sistema de Controle de Estoque{% endblock %}
-
+{% extends 'base.html' %}
+{% block title %}{{ 'Editar' if editando else 'Cadastrar' }} usuário | InStok{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/usuarios.css') }}">{% endblock %}
 {% block content %}
-    <h1>Cadastro de Usuario</h1>
-    <!-- TODO: implementar conteudo real desta pagina -->
-    <p>Pagina de Cadastro de Usuario em construcao.</p>
+<h1>{{ 'Editar' if editando else 'Cadastrar' }} usuário</h1>
+<p>Todos os campos são obrigatórios. {% if editando %}A senha e o status serão mantidos.{% else %}A conta será criada como ativa.{% endif %}</p>
+<form class="user-form" method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="user-fields">
+    <div><label for="nome">Nome</label><input id="nome" name="nome" value="{{ dados.get('nome', '') }}" maxlength="150" autocomplete="off" required></div>
+    <div><label for="usuario">Usuário</label><input id="usuario" name="usuario" value="{{ dados.get('usuario', '') }}" maxlength="80" autocomplete="off" aria-describedby="login-ajuda" required><small id="login-ajuda">Sem espaços. Maiúsculas e minúsculas são diferentes no login.</small></div>
+    <div><label for="email">E-mail</label><input id="email" name="email" type="email" value="{{ dados.get('email', '') }}" maxlength="254" autocomplete="off" required></div>
+    <div><label for="nivel_acesso">Nível de acesso</label><select id="nivel_acesso" name="nivel_acesso" required>
+      <option value="OPERADOR" {% if dados.get('nivel_acesso') == 'OPERADOR' %}selected{% endif %}>Operador</option>
+      <option value="ADMINISTRADOR" {% if dados.get('nivel_acesso') == 'ADMINISTRADOR' %}selected{% endif %}>Administrador</option>
+    </select><small>Administradores podem gerenciar outras contas.</small></div>
+    {% if not editando %}<div><label for="senha">Senha inicial</label><input id="senha" name="senha" type="password" minlength="8" maxlength="256" autocomplete="new-password" aria-describedby="senha-ajuda" required><small id="senha-ajuda">De 8 a 256 caracteres. A senha não será exibida novamente.</small></div>{% endif %}
+  </div>
+  <div class="user-form-actions"><button class="btn btn-primary" type="submit">{{ 'Salvar alterações' if editando else 'Cadastrar usuário' }}</button><a class="btn btn-tertiary" href="{{ url_for('usuarios.index') }}">Cancelar</a></div>
+</form>
 {% endblock %}

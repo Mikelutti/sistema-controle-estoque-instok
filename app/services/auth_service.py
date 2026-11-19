@@ -21,7 +21,7 @@ def dados_publicos(usuario):
 
 def obter_usuario_autenticado(usuario_id):
     """Revalida status e perfil no banco em cada requisição autenticada."""
-    if type(usuario_id) is not int or usuario_id <= 0:
+    if type(usuario_id) is not int or not 1 <= usuario_id <= 9223372036854775807:
         return None
     usuario = buscar_usuario_por_id(usuario_id)
     if (usuario is None or usuario["status"] != "ATIVO"

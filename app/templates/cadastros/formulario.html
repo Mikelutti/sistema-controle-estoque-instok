@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Editar' if editando else 'Cadastrar' }} {{ entidade }} | InStok{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/cadastros.css') }}">{% endblock %}
+{% block content %}
+<h1>{{ 'Editar' if editando else 'Cadastrar' }} {{ entidade }}</h1>
+<p>Preencha os campos obrigatórios. A descrição é opcional.{% if editando %} O status será mantido.{% endif %}</p>
+{% if produto %}<p>Este formulário não altera o saldo de estoque.</p>
+  {% if not categorias %}<div class="message" role="alert">Cadastre uma categoria ativa antes de salvar o produto. <a class="btn btn-secondary" href="{{ url_for('categorias.formulario') }}">Cadastrar categoria</a></div>{% endif %}
+{% endif %}
+<form class="cadastro-form" method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="cadastro-fields">
+    {% if produto %}<div><label for="codigo">Código *</label><input id="codigo" name="codigo" value="{{ dados.get('codigo', '') }}" maxlength="80" required aria-describedby="codigo-ajuda"><small id="codigo-ajuda">Único, até 80 caracteres. Maiúsculas e minúsculas são diferentes.</small></div>{% endif %}
+    <div><label for="nome">Nome *</label><input id="nome" name="nome" value="{{ dados.get('nome', '') }}" maxlength="150" required aria-describedby="nome-ajuda"><small id="nome-ajuda">Até 150 caracteres.{% if not produto %} Nome único; maiúsculas e minúsculas são diferentes.{% endif %}</small></div>
+    {% if produto %}
+    <div><label for="categoria_id">Categoria *</label>
+      {% set selecionado = dados.get('categoria_id', '')|string %}
+      {% set escolha = namespace(encontrada=false) %}
+      <select id="categoria_id" name="categoria_id" required aria-describedby="categoria-ajuda">
+        <option value="">Selecione uma categoria</option>
+        {% for categoria in categorias %}
+          {% if categoria.id|string == selecionado %}{% set escolha.encontrada = true %}{% endif %}
+          <option value="{{ categoria.id }}" {% if categoria.id|string == selecionado %}selected{% endif %}>{{ categoria.nome }}{% if categoria.status == 'INATIVO' %} (inativa — vínculo atual){% endif %}</option>
+        {% endfor %}
+        {% if selecionado and not escolha.encontrada %}<option value="{{ selecionado }}" selected>Seleção inválida: {{ selecionado }}</option>{% endif %}
+      </select><small id="categoria-ajuda">Novas associações exigem categoria ativa. O vínculo atual com categoria inativa pode ser mantido.</small>
+    </div>
+    <div><label for="estoque_minimo">Estoque mínimo *</label><input id="estoque_minimo" name="estoque_minimo" type="text" inputmode="numeric" pattern="[0-9]{1,19}" maxlength="19" value="{{ dados.get('estoque_minimo', '0') }}" required aria-describedby="minimo-ajuda"><small id="minimo-ajuda">Informe o mínimo do produto considerando todos os setores.</small></div>
+    {% endif %}
+    <div class="cadastro-full"><label for="descricao">Descrição</label><textarea id="descricao" name="descricao" maxlength="2000" rows="4" aria-describedby="descricao-ajuda">{{ dados.get('descricao') or '' }}</textarea><small id="descricao-ajuda">Opcional, até 2000 caracteres.</small></div>
+  </div>
+  <div class="cadastro-form-actions"><button class="btn btn-primary" type="submit">{{ 'Salvar alterações' if editando else 'Cadastrar ' + entidade }}</button><a class="btn btn-tertiary" href="{{ url_for(modulo + '.index') }}">Cancelar</a></div>
+</form>
+{% endblock %}

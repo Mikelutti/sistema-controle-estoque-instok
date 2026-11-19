@@ -1,0 +1,14 @@
+{% macro selecao(campo, rotulo, opcoes, dados, eh_produto=false) %}
+<div><label for="{{ campo }}">{{ rotulo }} *</label>
+  {% set escolhido = dados.get(campo, '')|string %}
+  {% set estado = namespace(encontrado=false) %}
+  <select id="{{ campo }}" name="{{ campo }}" required>
+    <option value="">Selecione</option>
+    {% for opcao in opcoes %}
+      {% if opcao.id|string == escolhido %}{% set estado.encontrado = true %}{% endif %}
+      <option value="{{ opcao.id }}" {% if opcao.id|string == escolhido %}selected{% endif %}>{% if eh_produto %}{{ opcao.codigo }} · {% endif %}{{ opcao.nome }}</option>
+    {% endfor %}
+    {% if escolhido and not estado.encontrado %}<option value="{{ escolhido }}" selected>Seleção indisponível: {{ escolhido }}</option>{% endif %}
+  </select>
+</div>
+{% endmacro %}

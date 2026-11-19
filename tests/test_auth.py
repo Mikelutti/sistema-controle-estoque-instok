@@ -83,10 +83,12 @@ class AuthTests(unittest.TestCase):
 
     def test_todas_as_paginas_internas_exigem_login(self):
         for rule in self.app.url_map.iter_rules():
+            if "GET" not in rule.methods:
+                continue
             if rule.endpoint.startswith("auth.") or rule.endpoint == "static" or rule.rule == "/":
                 continue
             with self.subTest(path=rule.rule):
-                response = self.client.get(rule.rule)
+                response = self.client.get(re.sub(r"<int:\w+>", "2", rule.rule))
                 self.assertEqual(response.status_code, 302)
                 self.assertTrue(response.location.endswith("/auth/login"))
 

@@ -1,9 +1,51 @@
-{% extends "base.html" %}
-
-{% block title %}Dashboard - Sistema de Controle de Estoque{% endblock %}
-
+{% extends 'base.html' %}
+{% from 'partials/icones.html' import icone %}
+{% block title %}Dashboard | InStok{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">{% endblock %}
 {% block content %}
-    <h1>Dashboard</h1>
-    <!-- TODO: implementar conteudo real desta pagina -->
-    <p>Pagina de Dashboard em construcao.</p>
+<div class="dashboard">
+<header><h1>Resumo do estoque</h1>
+<p>Produtos ativos, com saldo somado em todos os setores.</p></header>
+<h2 class="dashboard-section-title">Visão geral</h2>
+<div class="indicadores">
+  <article class="indicador">
+    <header><h3>Produtos ativos</h3>{{ icone("package") }}</header>
+    <strong>{{ resumo.total_produtos }}</strong>
+    <footer><a class="btn btn-secondary" href="{{ url_for('produtos.index') }}">Ver produtos {{ icone("arrow-right") }}</a></footer>
+  </article>
+  <article class="indicador">
+    <header><h3>Unidades em estoque</h3>{{ icone("boxes") }}</header>
+    <strong>{{ resumo.total_unidades }}</strong>
+    <footer><a class="btn btn-secondary" href="{{ url_for('estoque.inventario') }}">Ver inventário {{ icone("arrow-right") }}</a></footer>
+  </article>
+  <article class="indicador">
+    <header><h3>Sem estoque</h3>{{ icone("triangle-alert") }}</header>
+    <strong>{{ resumo.sem_estoque|length }}</strong>
+    <footer><a class="btn btn-secondary" href="{{ url_for('alertas.index') }}#sem-estoque">Ver produtos sem estoque {{ icone("arrow-right") }}</a></footer>
+  </article>
+  <article class="indicador">
+    <header><h3>Estoque baixo</h3>{{ icone("triangle-alert") }}</header>
+    <strong>{{ resumo.estoque_baixo|length }}</strong>
+    <footer><a class="btn btn-secondary" href="{{ url_for('alertas.index') }}#estoque-baixo">Ver produtos com estoque baixo {{ icone("arrow-right") }}</a></footer>
+  </article>
+</div>
+<section class="painel-acoes" aria-labelledby="acoes-titulo"><h2 id="acoes-titulo">Movimentar e acompanhar</h2><div>
+{% for endpoint, simbolo, titulo, descricao in [
+    ('estoque.entrada', 'package-plus', 'Registrar entrada', 'Adicione unidades ao setor de destino.'),
+    ('estoque.saida', 'package-minus', 'Registrar saída', 'Registre a retirada de um produto.'),
+    ('estoque.transferencia', 'arrow-left-right', 'Transferir', 'Mova unidades entre setores.'),
+    ('movimentacoes.index', 'history', 'Consultar histórico', 'Veja quem movimentou o estoque e quando.')
+] %}
+<a class="acao-card" href="{{ url_for(endpoint) }}">
+  <span class="acao-icone">{{ icone(simbolo) }}</span>
+  <span class="acao-texto"><strong>{{ titulo }}</strong>
+  <span class="acao-descricao">{{ descricao }}</span></span>
+</a>
+{% endfor %}
+</div></section>
+<aside class="dashboard-notas" aria-label="Informações sobre o estoque">
+{% if not resumo.total_produtos %}<p class="painel-aviso">Nenhum produto ativo. Cadastre produtos para acompanhar os indicadores.</p>{% else %}<p>{{ resumo.total_normal }} produto(s) com estoque normal, acima do mínimo.</p>{% endif %}
+<p class="painel-regra">Sem estoque: saldo zero. Estoque baixo: saldo positivo menor ou igual ao mínimo cadastrado. Produtos inativos não entram nos indicadores. Atualize a página para consultar novas movimentações.</p>
+</aside>
+</div>
 {% endblock %}

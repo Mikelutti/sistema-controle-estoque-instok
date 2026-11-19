@@ -13,6 +13,7 @@ Este arquivo NAO contem queries especificas de entidades.
 
 import os
 import sqlite3
+from contextlib import contextmanager
 from pathlib import Path
 
 from flask import current_app, has_app_context
@@ -25,7 +26,7 @@ BASE_DIR = Path(__file__).resolve().parents[2]
 INSTANCE_DIR = BASE_DIR / "instance"
 
 # Arquivo SQLite
-DATABASE_PATH = INSTANCE_DIR / "controle_estoque.db"
+DATABASE_PATH = INSTANCE_DIR / "instok.db"
 
 
 def resolver_caminho(caminho):
@@ -76,3 +77,28 @@ def fechar_conexao(conexao=None):
 
     if conexao is not None:
         conexao.close()
+
+
+@contextmanager
+def transacao_escrita():
+    """Serializa leitura/validação/escrita, evitando decisões com dados obsoletos."""
+    conexao = obter_conexao()
+    try:
+        with conexao:
+            conexao.execute("BEGIN IMMEDIATE")
+            yield conexao
+    finally:
+        conexao.close()
+
+
+@contextmanager
+def conexao_consulta(conexao=None):
+    """Reutiliza a transação do chamador ou fecha uma conexão própria de leitura."""
+    if conexao is not None:
+        yield conexao
+        return
+    db = obter_conexao()
+    try:
+        yield db
+    finally:
+        db.close()

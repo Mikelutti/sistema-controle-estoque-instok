@@ -1,20 +1,10 @@
-"""
-app/routes/dashboard.py
-
-Modulo responsavel por: pagina inicial do sistema (Dashboard).
-
-Aqui futuramente serao exibidos:
-- Resumo geral do estoque
-- Alertas de estoque baixo / sem estoque (via alerta_service)
-- Indicadores gerais do sistema
-"""
-
+"""Painel de indicadores do estoque real."""
 from flask import Blueprint, render_template
+from app.services.alerta_service import obter_resumo
 
-dashboard_bp = Blueprint("dashboard", __name__, url_prefix="/dashboard")
+dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/dashboard')
 
 
-# TODO: buscar dados reais de estoque e alertas via services
-@dashboard_bp.route("/")
+@dashboard_bp.route('/')
 def index():
-    return render_template("dashboard/index.html")
+    return render_template('dashboard/index.html', resumo=obter_resumo())

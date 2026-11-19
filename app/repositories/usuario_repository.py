@@ -1,189 +1,73 @@
-"""
-app/repositories/usuario_repository.py
+"""SQL de usuários; operações compostas compartilham a transação do service."""
+from contextlib import contextmanager
+from app.database.connection import obter_conexao
 
-Responsabilidade:
-- Executar o SQL relacionado a tabela usuarios.
-- Nao conter regras de negocio.
-- Utilizar a conexao definida em app/database/connection.py.
-"""
-
-from app.database.connection import obter_conexao, fechar_conexao
+COLUNAS_PUBLICAS = "id, nome, usuario, email, nivel_acesso, status, data_cadastro"
 
 
-def buscar_usuario_por_id(usuario_id):
-    conexao = obter_conexao()
-
-    try:
-        usuario = conexao.execute(
-            """
-            SELECT *
-            FROM usuarios
-            WHERE id = ?
-            """,
-            (usuario_id,),
-        ).fetchone()
-
-        return usuario
-
-    finally:
-        fechar_conexao(conexao)
+@contextmanager
+def conexao_usuario(conexao=None):
+    if conexao is not None:
+        yield conexao
+    else:
+        db = obter_conexao()
+        try:
+            with db:
+                yield db
+        finally:
+            db.close()
 
 
-def buscar_usuario_por_login(login):
-    conexao = obter_conexao()
-
-    try:
-        usuario = conexao.execute(
-            """
-            SELECT *
-            FROM usuarios
-            WHERE usuario = ?
-            """,
-            (login,),
-        ).fetchone()
-
-        return usuario
-
-    finally:
-        fechar_conexao(conexao)
+def buscar_usuario_por_id(usuario_id, conexao=None):
+    with conexao_usuario(conexao) as db:
+        return db.execute("SELECT " + COLUNAS_PUBLICAS + " FROM usuarios WHERE id=?",
+                          (usuario_id,)).fetchone()
 
 
-def buscar_usuario_por_email(email):
-    conexao = obter_conexao()
-
-    try:
-        usuario = conexao.execute(
-            """
-            SELECT *
-            FROM usuarios
-            WHERE email = ?
-            """,
-            (email,),
-        ).fetchone()
-
-        return usuario
-
-    finally:
-        fechar_conexao(conexao)
+def buscar_usuario_por_login(login, conexao=None):
+    # Única consulta que entrega hash: usada pela autenticação.
+    with conexao_usuario(conexao) as db:
+        return db.execute("SELECT * FROM usuarios WHERE usuario=?", (login,)).fetchone()
 
 
-def listar_usuarios():
-    conexao = obter_conexao()
-
-    try:
-        usuarios = conexao.execute(
-            """
-            SELECT *
-            FROM usuarios
-            WHERE status = 'ATIVO'
-            ORDER BY nome
-            """
-        ).fetchall()
-
-        return usuarios
-
-    finally:
-        fechar_conexao(conexao)
+def buscar_usuario_por_email(email, conexao=None):
+    with conexao_usuario(conexao) as db:
+        return db.execute("SELECT " + COLUNAS_PUBLICAS +
+                          " FROM usuarios WHERE lower(trim(email))=?", (email,)).fetchone()
 
 
-def inserir_usuario(nome, usuario, email, senha_hash, nivel_acesso):
-    conexao = obter_conexao()
-
-    try:
-        cursor = conexao.execute(
-            """
-            INSERT INTO usuarios
-            (
-                nome,
-                usuario,
-                email,
-                senha_hash,
-                nivel_acesso
-            )
-            VALUES (?, ?, ?, ?, ?)
-            """,
-            (
-                nome,
-                usuario,
-                email,
-                senha_hash,
-                nivel_acesso,
-            ),
-        )
-
-        conexao.commit()
-
-        return cursor.lastrowid
-
-    except Exception:
-        conexao.rollback()
-        raise
-
-    finally:
-        fechar_conexao(conexao)
+def listar_usuarios(conexao=None):
+    with conexao_usuario(conexao) as db:
+        return db.execute("SELECT " + COLUNAS_PUBLICAS +
+                          " FROM usuarios ORDER BY nome COLLATE NOCASE, id").fetchall()
 
 
-def atualizar_usuario(
-    usuario_id,
-    nome,
-    usuario,
-    email,
-    nivel_acesso,
-):
-    conexao = obter_conexao()
-
-    try:
-        cursor = conexao.execute(
-            """
-            UPDATE usuarios
-            SET
-                nome = ?,
-                usuario = ?,
-                email = ?,
-                nivel_acesso = ?
-            WHERE id = ?
-            """,
-            (
-                nome,
-                usuario,
-                email,
-                nivel_acesso,
-                usuario_id,
-            ),
-        )
-
-        conexao.commit()
-
-        return cursor.rowcount
-
-    except Exception:
-        conexao.rollback()
-        raise
-
-    finally:
-        fechar_conexao(conexao)
+def buscar_duplicado(usuario, email, excluir_id=None, conexao=None):
+    with conexao_usuario(conexao) as db:
+        return db.execute(
+            "SELECT usuario, email FROM usuarios WHERE (usuario=? OR lower(trim(email))=?) "
+            "AND (? IS NULL OR id<>?) LIMIT 1",
+            (usuario, email, excluir_id, excluir_id)).fetchone()
 
 
-def inativar_usuario(usuario_id):
-    conexao = obter_conexao()
+def contar_administradores_ativos(conexao):
+    return conexao.execute("SELECT count(*) FROM usuarios WHERE status='ATIVO' "
+                           "AND nivel_acesso='ADMINISTRADOR'").fetchone()[0]
 
-    try:
-        cursor = conexao.execute(
-            """
-            UPDATE usuarios
-            SET status = 'INATIVO'
-            WHERE id = ?
-            """,
-            (usuario_id,),
-        )
 
-        conexao.commit()
+def inserir_usuario(nome, usuario, email, senha_hash, nivel_acesso, conexao=None):
+    with conexao_usuario(conexao) as db:
+        return db.execute(
+            "INSERT INTO usuarios(nome,usuario,email,senha_hash,nivel_acesso) VALUES (?,?,?,?,?)",
+            (nome, usuario, email, senha_hash, nivel_acesso)).lastrowid
 
-        return cursor.rowcount
 
-    except Exception:
-        conexao.rollback()
-        raise
+def atualizar_usuario(usuario_id, nome, usuario, email, nivel_acesso, conexao=None):
+    with conexao_usuario(conexao) as db:
+        return db.execute("UPDATE usuarios SET nome=?, usuario=?, email=?, nivel_acesso=? WHERE id=?",
+                          (nome, usuario, email, nivel_acesso, usuario_id)).rowcount
 
-    finally:
-        fechar_conexao(conexao)
+
+def inativar_usuario(usuario_id, conexao=None):
+    with conexao_usuario(conexao) as db:
+        return db.execute("UPDATE usuarios SET status='INATIVO' WHERE id=?", (usuario_id,)).rowcount

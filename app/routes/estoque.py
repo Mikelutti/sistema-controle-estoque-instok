@@ -1,43 +1,47 @@
-"""
-app/routes/estoque.py
-
-Modulo responsavel por: entrada, saida, inventario e transferencia de estoque.
-
-Regras de negocio (validar entrada/saida, impedir estoque negativo,
-processar transferencia) ficam em app/services/estoque_service.py.
-Esta camada apenas recebe a requisicao e delega para o service.
-
-Funcionalidades previstas:
-- Visualizar inventario atual
-- Registrar entrada de produtos
-- Registrar saida de produtos
-- Registrar transferencia entre setores
-"""
-
-from flask import Blueprint, render_template
+"""Formulários de movimentação e consulta de inventário."""
+from flask import Blueprint, flash, g, redirect, render_template, request, url_for
+from app.routes.cadastros import registrar_erros
+from app.services import estoque_service as service
 
 estoque_bp = Blueprint("estoque", __name__, url_prefix="/estoque")
+registrar_erros(estoque_bp)
+TITULOS = {"ENTRADA": "Entrada de estoque", "SAIDA": "Saída de estoque",
+           "TRANSFERENCIA": "Transferência entre setores"}
 
 
-# TODO: exibir inventario atual (quantidades por produto/setor)
-@estoque_bp.route("/inventario")
+@estoque_bp.get("/inventario")
 def inventario():
-    return render_template("estoque/inventario.html")
+    return render_template("estoque/inventario.html", registros=service.listar_inventario())
 
 
-# TODO: registrar entrada de produtos no estoque
-@estoque_bp.route("/entrada")
+def formulario(tipo):
+    dados = {}
+    status = 200
+    if request.method == "POST":
+        dados = {campo: request.form.get(campo, "") for campo in
+                 ("produto_id", "quantidade", "setor_origem_id", "setor_destino_id", "observacao")}
+        try:
+            movimento_id = service.movimentar(tipo, **dados, usuario_id=g.usuario["id"])
+        except ValueError as erro:
+            flash(str(erro), "erro")
+            status = 400
+        else:
+            flash(f"Movimentação #{movimento_id} registrada com sucesso. Saldo atualizado.", "sucesso")
+            return redirect(url_for("estoque.inventario"))
+    return render_template("estoque/" + tipo.lower() + ".html", tipo=tipo, titulo=TITULOS[tipo],
+                           dados=dados, **service.opcoes_movimentacao()), status
+
+
+@estoque_bp.route("/entrada", methods=["GET", "POST"])
 def entrada():
-    return render_template("estoque/entrada.html")
+    return formulario("ENTRADA")
 
 
-# TODO: registrar saida de produtos do estoque
-@estoque_bp.route("/saida")
+@estoque_bp.route("/saida", methods=["GET", "POST"])
 def saida():
-    return render_template("estoque/saida.html")
+    return formulario("SAIDA")
 
 
-# TODO: registrar transferencia de produtos entre setores
-@estoque_bp.route("/transferencia")
+@estoque_bp.route("/transferencia", methods=["GET", "POST"])
 def transferencia():
-    return render_template("estoque/transferencia.html")
+    return formulario("TRANSFERENCIA")

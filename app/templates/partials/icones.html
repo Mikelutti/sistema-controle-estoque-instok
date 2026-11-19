@@ -1,0 +1,7 @@
+{# SVGs oficiais Lucide 0.468.0, licença em static/icons/lucide/LICENSE. #}
+{% macro icone(nome) -%}
+<svg class="lucide-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="{{ url_for('static', filename='icons/lucide/sprite.svg') }}#{{ nome }}"></use></svg>
+{%- endmacro %}
+{% macro tema() -%}
+<span data-theme-icon><span data-icon-state="moon">{{ icone('moon') }}</span><span data-icon-state="sun">{{ icone('sun') }}</span></span>
+{%- endmacro %}

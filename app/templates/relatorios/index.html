@@ -1,9 +1,30 @@
-{% extends "base.html" %}
-
-{% block title %}Relatorios - Sistema de Controle de Estoque{% endblock %}
-
+{% extends 'base.html' %}
+{% from 'partials/icones.html' import icone %}
+{% block title %}Relatórios | InStok{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/cadastros.css') }}">{% endblock %}
 {% block content %}
-    <h1>Relatorios</h1>
-    <!-- TODO: implementar conteudo real desta pagina -->
-    <p>Pagina de Relatorios em construcao.</p>
+<h1>Relatórios</h1>
+<p>Consulte movimentações, estoque atual por setor e alertas globais por produto. Exporte os resultados para CSV.</p>
+{% if erro %}<p class="message" role="alert">{{ erro }}</p>{% endif %}
+<form method="get" class="cadastro-form report-filters">
+<div class="cadastro-fields">
+<div><label for="relatorio">Relatório</label><select id="relatorio" name="relatorio">{% for v,t in [('movimentacoes','Movimentações'),('estoque','Estoque atual'),('alertas','Alertas de estoque')] %}<option value="{{ v }}" {% if valores.get('relatorio','movimentacoes')==v %}selected{% endif %}>{{ t }}</option>{% endfor %}</select></div>
+<div><label for="produto_id">Produto</label><select id="produto_id" name="produto_id"><option value="">Todos</option>{% for p in produtos %}<option value="{{ p.id }}" {% if valores.get('produto_id')==p.id|string %}selected{% endif %}>{{ p.codigo }} — {{ p.nome }}{% if p.status=='INATIVO' %} (inativo){% endif %}</option>{% endfor %}</select></div>
+<div><label for="categoria_id">Categoria</label><select id="categoria_id" name="categoria_id"><option value="">Todas</option>{% for c in categorias %}<option value="{{ c.id }}" {% if valores.get('categoria_id')==c.id|string %}selected{% endif %}>{{ c.nome }}{% if c.status=='INATIVO' %} (inativa){% endif %}</option>{% endfor %}</select></div>
+<div><label for="setor_id">Setor (movimentações e estoque)</label><select id="setor_id" name="setor_id"><option value="">Todos</option>{% for s in setores %}<option value="{{ s.id }}" {% if valores.get('setor_id')==s.id|string %}selected{% endif %}>{{ s.nome }}{% if s.status=='INATIVO' %} (inativo){% endif %}</option>{% endfor %}</select></div>
+<div><label for="inicio">De (UTC, somente movimentações)</label><input type="date" id="inicio" name="inicio" value="{{ valores.get('inicio','') }}"></div>
+<div><label for="fim">Até (UTC, inclusive)</label><input type="date" id="fim" name="fim" value="{{ valores.get('fim','') }}"></div>
+<div><label for="tipo">Tipo (somente movimentações)</label><select id="tipo" name="tipo"><option value="">Todos</option>{% for v,t in [('ENTRADA','Entrada'),('SAIDA','Saída'),('TRANSFERENCIA','Transferência')] %}<option value="{{ v }}" {% if valores.get('tipo')==v %}selected{% endif %}>{{ t }}</option>{% endfor %}</select></div>
+</div><div class="cadastro-form-actions"><button class="btn btn-primary" type="submit">Consultar</button><a class="btn btn-tertiary" href="{{ url_for('relatorios.index') }}">Limpar filtros</a></div>
+</form>
+<p>O período inclui os dois dias, em UTC. O setor procura origem ou destino nas movimentações. Estoque é o saldo atual; alertas incluem somente produtos ativos e somam todos os setores.</p>
+{% if resultado %}
+<div class="cadastro-form-actions report-results"><strong>{{ resultado.registros|length }} registro(s) encontrado(s)</strong><a class="btn btn-secondary" href="{{ export_url }}">{{ icone("file-chart-column") }} Exportar CSV</a></div>
+<p>O CSV consulta novamente os mesmos filtros no momento do download. Nomes e categorias refletem o cadastro atual.</p>
+<p class="cadastro-mobile-hint">Deslize a tabela para ver todas as colunas.</p>
+<div class="cadastro-table-wrap" role="region" aria-label="Resultado do relatório" tabindex="0"><table class="cadastro-table"><caption class="cadastro-sr-only">Resultado dos filtros de relatório</caption>
+<thead><tr>{% for chave,rotulo in resultado.colunas %}<th scope="col">{{ rotulo }}</th>{% endfor %}</tr></thead>
+<tbody>{% for row in resultado.registros %}<tr>{% for chave,rotulo in resultado.colunas %}<td class="cadastro-descricao">{{ row[chave] if row[chave] is not none else '—' }}</td>{% endfor %}</tr>{% else %}<tr><td colspan="{{ resultado.colunas|length }}"><div class="empty-state">{{ icone("file-chart-column") }}<strong>Nenhum registro encontrado</strong><span>Ajuste os filtros para consultar outros resultados.</span></div></td></tr>{% endfor %}</tbody></table></div>
+{% endif %}
 {% endblock %}
+{% block extra_js %}<script defer src="{{ url_for('static', filename='js/relatorios.js') }}"></script>{% endblock %}

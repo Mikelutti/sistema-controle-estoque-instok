@@ -189,3 +189,5 @@ ON movimentacoes(usuario_id);
 
 CREATE INDEX IF NOT EXISTS idx_movimentacoes_data
 ON movimentacoes(data_hora);
+CREATE INDEX IF NOT EXISTS idx_movimentacoes_origem ON movimentacoes(setor_origem_id);
+CREATE INDEX IF NOT EXISTS idx_movimentacoes_destino ON movimentacoes(setor_destino_id);

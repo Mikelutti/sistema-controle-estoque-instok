@@ -1,9 +1,20 @@
-{% extends "base.html" %}
-
-{% block title %}Movimentacoes - Sistema de Controle de Estoque{% endblock %}
-
+{% extends 'base.html' %}
+{% block title %}Histórico de movimentações | InStok{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/cadastros.css') }}">{% endblock %}
 {% block content %}
-    <h1>Movimentacoes</h1>
-    <!-- TODO: implementar conteudo real desta pagina -->
-    <p>Pagina de Movimentacoes em construcao.</p>
+<h1>Histórico de movimentações</h1>
+<p>Entradas, saídas e transferências, da mais recente para a mais antiga. Horários em UTC. Registros somente para consulta.</p>
+<p><a class="btn btn-secondary" href="{{ url_for('estoque.inventario') }}">Consultar inventário</a></p>
+<p class="cadastro-mobile-hint" id="historico-ajuda">Deslize a tabela para ver todas as colunas.</p>
+{% set nomes = {'ENTRADA': 'Entrada', 'SAIDA': 'Saída', 'TRANSFERENCIA': 'Transferência'} %}
+<div class="cadastro-table-wrap" role="region" aria-label="Histórico de movimentações" tabindex="0" aria-describedby="historico-ajuda">
+<table class="cadastro-table historico-table">
+  <caption class="cadastro-sr-only">Histórico com produto, quantidade, responsável e setores</caption>
+  <thead><tr><th scope="col">Registro / data (UTC)</th><th scope="col">Tipo</th><th scope="col">Produto</th><th scope="col">Quantidade</th><th scope="col">Origem</th><th scope="col">Destino</th><th scope="col">Responsável</th><th scope="col">Motivo</th></tr></thead>
+  <tbody>{% for registro in registros %}<tr>
+    <td>#{{ registro.id }}<small>{{ registro.data_hora }}</small></td><td>{{ nomes.get(registro.tipo, registro.tipo) }}</td><td>{{ registro.codigo }}<small>{{ registro.produto_nome }}</small></td><td>{{ registro.quantidade }}</td>
+    <td>{{ registro.origem_nome or '—' }}</td><td>{{ registro.destino_nome or '—' }}</td><td>{{ registro.usuario_nome }}<small>{{ registro.usuario_login }}</small></td><td class="cadastro-descricao">{{ registro.observacao or '—' }}</td>
+  </tr>{% else %}<tr><td colspan="8">Nenhuma movimentação registrada.</td></tr>{% endfor %}</tbody>
+</table>
+</div>
 {% endblock %}
