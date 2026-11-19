@@ -3,7 +3,7 @@
 .dashboard > header p { font-weight: 500; }
 .indicadores, .painel-acoes > div { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--gap); }
 .painel-acoes > div { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.indicador { display: grid; grid-template-rows: subgrid; grid-row: span 3; row-gap: 8px; background: var(--surface-raised); padding: 20px; border: 0; border-radius: 16px; min-width: 0; }
+.indicador { display: grid; grid-template-rows: subgrid; grid-row: span 3; row-gap: 8px; background: var(--surface-raised); padding: 20px; border: 1px solid var(--line); border-radius: 16px; min-width: 0; }
 .indicador header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
 .indicador h3 { line-height: 1.4; font-size: 14px; font-weight: 600; margin: 0; color: var(--ink); }
 .indicador header .lucide-icon { width: 16px; height: 16px; flex-basis: 16px; color: var(--link); }
@@ -38,13 +38,42 @@
 
 /* Palette roles for the dashboard and stock alerts. */
 .page-content:has(.dashboard) { background: var(--page); border: 0; box-shadow: none; padding: 0; }
-.dashboard .indicador:nth-child(3) header .lucide-icon,
 #sem-estoque .alerta-contagem { color: var(--danger); }
-.dashboard .indicador:nth-child(4) header .lucide-icon,
 #estoque-baixo .alerta-contagem { color: var(--warning); }
 #sem-estoque .alerta-contagem { background: var(--danger-bg); border-color: var(--danger); }
 #estoque-baixo .alerta-contagem { background: var(--warning-bg); border-color: var(--warning); }
-.acao-icone, .indicador header .lucide-icon { color: var(--accent); }
-:root[data-theme="dark"] .acao-icone, :root[data-theme="dark"] .indicador header .lucide-icon { color: var(--link); }
-.dashboard .indicador:nth-child(3) header .lucide-icon { color: var(--danger); }
-.dashboard .indicador:nth-child(4) header .lucide-icon { color: var(--warning); }
+
+/* Cores locais aos cards, sem afetar a página de alertas. */
+.dashboard {
+    --card-blue: #2563EB;
+    --card-blue-bg: #DBEAFE;
+    --card-amber: #B45309;
+    --card-amber-bg: #FEF3C7;
+    --card-green: #047857;
+    --card-green-bg: #D1FAE5;
+    --card-purple: #7C3AED;
+    --card-purple-bg: #EDE9FE;
+}
+:root[data-theme="dark"] .dashboard {
+    --card-blue: #93B4FF;
+    --card-blue-bg: color-mix(in srgb, var(--card-blue) 12%, var(--surface-raised));
+    --card-amber: #F5CD78;
+    --card-amber-bg: color-mix(in srgb, var(--card-amber) 12%, var(--surface-raised));
+    --card-green: #6EE7B7;
+    --card-green-bg: color-mix(in srgb, var(--card-green) 12%, var(--surface-raised));
+    --card-purple: #C4B5FD;
+    --card-purple-bg: color-mix(in srgb, var(--card-purple) 12%, var(--surface-raised));
+}
+.dashboard .indicador { --card-icon: var(--card-blue); --card-icon-bg: var(--card-blue-bg); }
+.dashboard .indicador:nth-child(3) { --card-icon: var(--danger); --card-icon-bg: var(--danger-bg); }
+.dashboard .indicador:nth-child(4) { --card-icon: var(--card-amber); --card-icon-bg: var(--card-amber-bg); }
+.dashboard .indicador header .lucide-icon {
+    color: var(--card-icon);
+    background: var(--card-icon-bg);
+    box-shadow: 0 0 0 6px var(--card-icon-bg);
+    border-radius: 4px;
+    margin: 6px;
+}
+.dashboard .acao-icone { color: var(--card-blue); background: var(--card-blue-bg); }
+.dashboard .acao-card:first-child .acao-icone { color: var(--card-green); background: var(--card-green-bg); }
+.dashboard .acao-card:nth-child(2) .acao-icone { color: var(--card-purple); background: var(--card-purple-bg); }

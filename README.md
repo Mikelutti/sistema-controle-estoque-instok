@@ -68,7 +68,7 @@ para reutilizá-la entre sessões. Trocar a chave desconecta os usuários.
 
 `.env.example` documenta as variáveis, mas **run.py não carrega `.env`
 automaticamente**. Defina-as no ambiente. `DATABASE_PATH` aceita caminho absoluto
-ou relativo à raiz do projeto; o padrão é `instance/controle_estoque.db`.
+ou relativo à raiz do projeto; o padrão é `instance/instok.db`.
 `FLASK_DEBUG=true` é apenas para desenvolvimento. Em hospedagem HTTPS, configure
 `SESSION_COOKIE_SECURE=true`; o servidor de desenvolvimento Flask não é uma
 configuração de produção.
@@ -97,11 +97,11 @@ perfil ou credenciais demonstrativas.
 Referência: [frontend da equipe, commit f999815](https://github.com/Mikelutti/sistema-controle-estoque-instok/commit/f999815540e44fd1ca8e051efb99d355382860e1),
 arquivos `InStock Controle de Estoque frontend/index.html`, `styles.css` e
 `script.js`. A adaptação preserva a paleta azul-marinho, composição do login,
-menu lateral e temas. A fonte Manrope vem do Google Fonts com fallback Arial
+menu lateral e temas. A fonte Inter vem do Google Fonts com fallback do sistema
 quando o serviço não está disponível.
 
-O JavaScript controla tema, visibilidade da senha e menu móvel. A preferência
-de tema é o único dado salvo em localStorage. Login, logout e navegação usam
+O JavaScript controla tema, visibilidade da senha e menu móvel. Cada página
+inicia no tema escuro; o botão permite alternar o tema durante o uso. Login, logout e navegação usam
 formulários e URLs reais; autenticação e permissões permanecem no servidor.
 Não foram importados produtos, movimentos ou indicadores demonstrativos.
 
@@ -109,8 +109,7 @@ Verificação manual: entrar com uma conta existente, alternar tema, navegar
 entre páginas e sair. Em tela estreita, abrir/fechar o menu e usar Escape.
 O menu de usuários só aparece para administradores. Administradores e operadores
 ativos podem registrar movimentações. O nome exibido na aplicação é **InStok**; caminhos
-de arquivos do frontend de terceiros e a chave técnica de preferência de tema
-foram preservados.
+de arquivos do frontend de terceiros foram preservados.
 
 ## Categorias, setores e produtos
 

@@ -26,7 +26,7 @@ BASE_DIR = Path(__file__).resolve().parents[2]
 INSTANCE_DIR = BASE_DIR / "instance"
 
 # Arquivo SQLite
-DATABASE_PATH = INSTANCE_DIR / "controle_estoque.db"
+DATABASE_PATH = INSTANCE_DIR / "instok.db"
 
 
 def resolver_caminho(caminho):
